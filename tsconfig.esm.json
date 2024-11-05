@@ -11,12 +11,10 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "Node",
-    "module": "CommonJS",
+    "module": "ESNext",
     "target": "ES6",
     "skipLibCheck": true,
-    "outDir": "./dist/cjs",
-    "declaration": true,
-    "declarationDir": "./dist/types"
+    "outDir": "./dist/esm"
   },
   "include": [
     "src/**/*.ts"

@@ -7,3 +7,4 @@ tmp
 .babelrc
 jest.config.ts
 tsconfig.json
+tsconfig.esm.json

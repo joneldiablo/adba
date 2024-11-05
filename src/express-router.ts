@@ -6,29 +6,13 @@ import moment from 'moment';
 import { kebabCase } from "change-case-all";
 import { v4 as uuidv4 } from 'uuid';
 
+import type {
+  IControllerMethods, IExpressRouterConf,
+  IRouteConf, IRoutesObject, IStatusCode, IRouterMethods
+} from "./types";
 import GenericController from "./controller";
 import Controller from "./controller";
-import getStatusCode, { IStatusCode } from "./status-codes";
-
-type IIncludes = string | string[];
-type RouterMethods = 'get' | 'post' | 'patch' | 'delete' | 'put';
-type ControllerMethods = 'list'
-  | 'selectById'
-  | 'insert'
-  | 'update'
-  | 'delete';
-export type IRoutesObject = Record<string, [
-  'GET' | 'POST' | 'DELETE' | 'PATCH' | 'PUT',
-  string, string, typeof Controller, typeof Model]>;
-
-export interface IBaseConfFilters {
-  defaultAction: 'includes' | 'excludes';
-}
-export interface IRouteConf extends IBaseConfFilters, Record<string, boolean | string> { }
-export interface IFilterConf extends IBaseConfFilters, Record<string, string | boolean | IRouteConf> { }
-export type IExpressRouterConf = {
-  filters?: IFilterConf
-}
+import getStatusCode from "./status-codes";
 
 const aliasing: Record<string, string> = {};
 
@@ -163,7 +147,7 @@ export default function expressRouter(routesObject: IRoutesObject, {
 } = {}) {
   Object.values(routesObject).forEach((value: IRoutesObject[1]) => {
     const [method, path, action, TheController, TheModel] = value;
-    const routerMethod = (router[method.toLowerCase() as RouterMethods]).bind(router);
+    const routerMethod = (router[method.toLowerCase() as IRouterMethods]).bind(router);
     routerMethod(path, async (req: Request, res: Response, next: NextFunction) => {
       const protocol = req.protocol;
       const host = req.get('host');
@@ -190,7 +174,7 @@ export default function expressRouter(routesObject: IRoutesObject, {
           ...unflatten(req.query || {})!,
           ...req.params || {},
         }
-        const ctrlAction: Function = controller[action as ControllerMethods].bind(controller);
+        const ctrlAction: Function = controller[action as IControllerMethods].bind(controller);
         const inputData = await beforeProcess(controller.Model.tableName, action, all, _idx);
         const outputData = await ctrlAction(inputData);
         const payload = await afterProcess(controller.Model.tableName, action, outputData, _idx);

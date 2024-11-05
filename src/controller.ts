@@ -1,21 +1,7 @@
 import { Model, QueryBuilderType, JSONSchema, WhereMethod } from 'objection';
 
+import type { IIds, ISearch } from './types';
 import getStatusCode from './status-codes';
-
-type ISearch = {
-  filters: Record<string, any>;
-  orderBy: Record<string, string>;
-  fields?: string | string[];
-  limit?: boolean | number;
-  offset?: number;
-  page?: number;
-  q?: string
-};
-
-type IIds = {
-  id?: number | number[];
-  ids?: number | number[];
-}
 
 export default class Controller {
 
@@ -289,5 +275,3 @@ export default class Controller {
   }
 
 }
-
-module.exports = Controller;

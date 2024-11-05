@@ -2,12 +2,22 @@
   "name": "adba",
   "version": "1.0.0",
   "description": "Any DataBase to API",
-  "main": "dist",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
   "directories": {
     "dist": "dist"
   },
   "scripts": {
-    "build": "ts-node --build",
+    "build:cjs": "tsc -p tsconfig.json",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build": "rm -rf dist/* && npm run build:cjs && npm run build:esm",
     "test": "jest",
     "test:e2e": "jest --config ./e2e/jest-e2e.json --forceExit"
   },

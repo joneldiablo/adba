@@ -1,5 +1,7 @@
 import moment from 'moment';
 
+import type { IExtraRules, IRuleAction, IRuleArray, IRules } from './types';
+
 const extraRules: IExtraRules = {};
 
 export function addRuleActions(moreRules: IExtraRules) {

@@ -1,9 +1,4 @@
-export type IStatusCode = {
-  status: number;
-  code: number;
-  description: string;
-  data?: any
-};
+import type { IStatusCode } from "./types";
 
 const statusCodes: Record<string, IStatusCode> = {
   '200.0': {
