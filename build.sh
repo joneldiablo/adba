@@ -61,10 +61,11 @@ else
   echo "Already on master branch. No merge needed."
 fi
 
+# builds
+yarn build
+
 # Update version and capture the new version
 new_version=$(node update-version.js)
-
-yarn build
 
 # Commit with the new version number
 git add .
