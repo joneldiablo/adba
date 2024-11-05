@@ -8,3 +8,5 @@ tmp
 jest.config.ts
 tsconfig.json
 tsconfig.esm.json
+build.sh
+update-version.js
