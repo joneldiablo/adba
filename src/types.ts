@@ -21,6 +21,8 @@ export type IRules = { [key: string]: IRule | IRuleArray };
 export type IExtraRules = { [key: string]: ((value: any) => any) };
 
 export type IStatusCode = {
+  error: boolean;
+  succes: boolean;
   status: number;
   code: number;
   description: string;
