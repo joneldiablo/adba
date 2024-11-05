@@ -1,33 +1,57 @@
 import { Model, QueryBuilderType, JSONSchema, WhereMethod } from 'objection';
 
-import type { IIds, ISearch } from './types';
+import type { IIds, ISearch, IStatusCode } from './types';
 import getStatusCode from './status-codes';
 
+/**
+ * @class Controller
+ * 
+ * @description
+ * A controller class for handling database queries using Objection.js models.
+ */
 export default class Controller {
 
   Model: typeof Model;
   qcolumns: string[] | undefined;
 
+  /**
+   * @constructor
+   * 
+   * @param {typeof Model} SqliteModel - The Objection.js model.
+   * @param {Object} options - Additional options for the controller.
+   * @param {string[]} [options.searchIn] - Columns to search in by default.
+   */
   constructor(SqliteModel: typeof Model, options: { searchIn?: string[] } = {}) {
     this.Model = SqliteModel;
     this.qcolumns = options?.searchIn;
   }
 
-  public findTypeString(ModelIn: typeof Model = this.Model) {
+  /**
+   * Finds string type columns in the model's JSON schema.
+   * 
+   * @param {typeof Model} ModelIn - The model to inspect. Defaults to this.Model.
+   * @returns {string[]} A list of string type column names.
+   */
+  public findTypeString(ModelIn: typeof Model = this.Model): string[] {
     const properties = ModelIn.jsonSchema.properties;
     const stringFields = [];
-
     for (const key in properties) {
       const field: JSONSchema = properties[key] as JSONSchema;
       if (field.type === 'string') {
         stringFields.push(key);
       }
     }
-
     return stringFields;
   }
 
-  public list(dataSearch: ISearch, queryBuilder?: QueryBuilderType<any>) {
+  /**
+   * Lists records based on search criteria.
+   * 
+   * @param {ISearch} dataSearch - The search criteria.
+   * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
+   * @returns {Promise<object>} The promise of the resulting data.
+   */
+  public list(dataSearch: ISearch, queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
     const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
     queryBuilderIn.clear(true);
     const ModelInUse = queryBuilder?._modelClass || this.Model;
@@ -42,13 +66,15 @@ export default class Controller {
     let limit: number;
     let offset: number;
     let page: number;
-    // pagination
+
+    // Set pagination defaults
     if (rawLimit !== false) {
       limit = !rawLimit || rawLimit === true ? 20 : rawLimit;
       offset = rawOffset || ((rawPage || 0) * limit) || 0;
       page = rawPage || Math.trunc(offset / limit) || 0;
     }
-    // fields or columns to return by row
+
+    // Columns to return
     const fields = new Set();
     const fieldsReq = !rawFields ? [] :
       Array.isArray(rawFields)
@@ -62,18 +88,17 @@ export default class Controller {
       queryBuilderIn.select(finalFields);
     }
 
-    // omni search
+    // Omni search
     if (typeof q === 'string') {
       const tableName = ModelInUse.tableName + '.';
       const query = q.replace(/(['\\])/g, '\\$1');
       const columns = Array.isArray(this.qcolumns) ? [...this.qcolumns] : this.findTypeString(ModelInUse);
-      // ordering template
       const locateOrder = `WHEN {{column}} = '${query}' THEN 0 WHEN {{column}} LIKE '${query}%' THEN 1 WHEN {{column}} LIKE '%${query}' THEN 4`;
       const regexColumn = /\{\{column\}\}/g;
       const order: string[] = [];
       const orWhereClauses: [string, string, string][] = [];
+
       columns.map((column) => {
-        // INFO: Ibidem
         const orderClause: [string, string, string] = [
           column.includes('.') ? column : tableName + column,
           'like', `%${query}%`
@@ -82,11 +107,11 @@ export default class Controller {
         const orderString = locateOrder.replace(regexColumn, (column.includes('.') ? column : tableName + column));
         order.push(orderString);
       });
-      // filter by *q* parametter
+
       queryBuilderIn.where((builder: QueryBuilderType<any>) => {
         orWhereClauses.forEach(w => builder.orWhere(...w));
       });
-      // set order string builded
+
       if (!Object.keys(orderBy).length) {
         queryBuilderIn.orderByRaw('CASE ' + order.join(' ') + ' ELSE 3 END');
       }
@@ -99,15 +124,13 @@ export default class Controller {
       else queryBuilderIn.orderBy(`${ModelInUse.tableName}.${col}`, dir);
     }
 
-    // Search by column
+    // Filtering by columns
     if (typeof filters === 'object') {
       queryBuilderIn.where((builder: QueryBuilderType<any>) => {
         Object.keys(filters).forEach((col) => {
           const tableColumn = col.includes('.') ? col : ModelInUse.tableName + '.' + col;
           const search = filters[col];
           if (Array.isArray(search)) {
-            // INFO: Si el campo es de tipo string, usar whereIn, 
-            //       en otro caso, whereBetween.
             const where = ModelInUse.jsonSchema
               .properties[col].type === 'string' ||
               search.length > 2 ? 'whereIn' : 'whereBetween';
@@ -153,10 +176,15 @@ export default class Controller {
     return response
       .then((resp: object[]) => this.successMerge(resp))
       .catch((error: Error) => this.error(error));
-
   }
 
-  public selectById({ id }: IIds, queryBuilder?: QueryBuilderType<any>) {
+  /**
+   * Selects a record by its ID.
+   * @param {IIds} param0 - The ID or IDs to select.
+   * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
+   * @returns {Promise<object>} The promise of the resulting data.
+   */
+  public selectById({ id }: IIds, queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
     const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.findById(id);
@@ -169,7 +197,13 @@ export default class Controller {
       .catch((error: Error) => this.error(error));
   }
 
-  public selectOneActive(find: object, queryBuilder?: QueryBuilderType<any>) {
+  /**
+   * Selects one active record based on given criteria.
+   * @param {object} find - Criteria to find the record.
+   * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
+   * @returns {Promise<object>} The promise of the resulting data.
+   */
+  public selectOneActive(find: object, queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
     const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.findOne({ ...find, active: true });
@@ -182,7 +216,13 @@ export default class Controller {
       .catch((error: Error) => this.error(error));
   }
 
-  public selectOne(find: object, queryBuilder?: QueryBuilderType<any>) {
+  /**
+   * Selects one record based on given criteria without considering active state.
+   * @param {object} find - Criteria to find the record.
+   * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
+   * @returns {Promise<object>} The promise of the resulting data.
+   */
+  public selectOne(find: object, queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
     const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.findOne(find);
@@ -195,7 +235,14 @@ export default class Controller {
       .catch((error: Error) => this.error(error));
   }
 
-  public insert(data: object | object[], queryBuilder?: QueryBuilderType<any>) {
+  /**
+   * Inserts one or multiple records.
+   * 
+   * @param {object | object[]} data - The data to insert.
+   * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
+   * @returns {Promise<object>} The promise of the resulting data.
+   */
+  public insert(data: object | object[], queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
     const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.insertGraph(data, { allowRefs: true });
@@ -205,7 +252,14 @@ export default class Controller {
       .catch((error: Error) => this.error(error));
   }
 
-  public update(data: object | object[], queryBuilder?: QueryBuilderType<any>) {
+  /**
+   * Updates records using an upsert operation.
+   * 
+   * @param {object | object[]} data - The data for upsert.
+   * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
+   * @returns {Promise<object>} The promise of the resulting data.
+   */
+  public update(data: object | object[], queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
     const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.upsertGraph(data, { allowRefs: true });
@@ -215,8 +269,14 @@ export default class Controller {
       .catch((error: Error) => this.error(error));
   }
 
-  public deleteWhere(whereData: WhereMethod<any>, queryBuilder?: QueryBuilderType<any>) {
-
+  /**
+   * Deletes records based on where clause.
+   * 
+   * @param {WhereMethod<any>} whereData - Criteria for delete operation.
+   * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
+   * @returns {Promise<object>} The promise of the resulting data.
+   */
+  public deleteWhere(whereData: WhereMethod<any>, queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
     const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.delete().where(whereData);
@@ -225,8 +285,15 @@ export default class Controller {
       .then((resp: any) => this.success(resp))
       .catch((error: Error) => this.error(error));
   }
-  public delete({ id, ids }: IIds, queryBuilder?: QueryBuilderType<any>) {
 
+  /**
+   * Deletes records by ID(s).
+   * 
+   * @param {IIds} param0 - The ID or IDs of records to delete.
+   * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
+   * @returns {Promise<object>} The promise of the resulting data.
+   */
+  public delete({ id, ids }: IIds, queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
     const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.delete().whereIn('id', [id, ids].flat().filter(Boolean));
@@ -236,16 +303,32 @@ export default class Controller {
       .catch((error: Error) => this.error(error));
   }
 
-  protected success(data?: any, status = 200, code = 0) {
+  /**
+   * Formats a successful response object.
+   * 
+   * @param {any} data - The data to return in the response.
+   * @param {number} [status=200] - The HTTP status code.
+   * @param {number} [code=0] - Additional status code.
+   * @returns {object} The success response object.
+   */
+  protected success(data?: any, status = 200, code = 0): IStatusCode {
     const toReturn = Object.assign(
       { error: false, success: true },
       getStatusCode(status, code),
       { data }
-    );
+    ) as IStatusCode;
     return toReturn;
   }
 
-  protected successMerge(data?: any, status = 200, code = 0) {
+  /**
+   * Merges additional data into a successful response object.
+   * 
+   * @param {any} data - The data to return in the response.
+   * @param {number} [status=200] - The HTTP status code.
+   * @param {number} [code=0] - Additional status code.
+   * @returns {object} The merged success response object.
+   */
+  protected successMerge(data?: any, status = 200, code = 0): IStatusCode {
     const toReturn = Object.assign(
       { error: false, success: true },
       getStatusCode(status, code),
@@ -254,24 +337,30 @@ export default class Controller {
     return toReturn;
   }
 
-  protected error(errorObj?: any, status = 500, code = 0) {
-    let toReturn;
+  /**
+   * Formats an error response object.
+   * 
+   * @param {any} errorObj - The error object or message.
+   * @param {number} [status=500] - The HTTP status code.
+   * @param {number} [code=0] - Additional status code.
+   * @returns {object} The error response object.
+   */
+  protected error(errorObj?: any, status = 500, code = 0): IStatusCode {
+    let toReturn: IStatusCode;
     if (errorObj instanceof Error) {
-      //TODO: implements datetime format whit space, stringify and split in lines, and if the objet its an error
       console.error(errorObj);
       toReturn = Object.assign(
         { error: true, success: false, },
         getStatusCode(500, 0),
         { data: errorObj.message }
-      );
+      ) as IStatusCode;
     } else {
       toReturn = Object.assign(
         { error: true, success: false },
         getStatusCode(status, code),
         { data: errorObj }
-      );
+      ) as IStatusCode;
     }
     return toReturn;
   }
-
 }

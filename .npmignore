@@ -10,3 +10,5 @@ tsconfig.json
 tsconfig.esm.json
 build.sh
 update-version.js
+typedoc.json
+docs

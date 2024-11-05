@@ -1,3 +1,8 @@
+/**
+ * @file express-router.ts
+ * @description This file provides functionalities for creating an Express router with dynamic routes based on ORM models.
+ */
+
 import { Model } from "objection";
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
@@ -16,6 +21,9 @@ import getStatusCode from "./status-codes";
 
 const aliasing: Record<string, string> = {};
 
+/**
+ * Predefined RESTful routes mapped to controller actions.
+ */
 const definedREST: Record<string, string> = {
   'GET /': 'list',
   'POST /': 'list',
@@ -27,6 +35,11 @@ const definedREST: Record<string, string> = {
   'DELETE /:id': 'delete',
 };
 
+/**
+ * Modifies predefined routes by either adding new ones or removing existing ones.
+ * @param defs - The definitions to be added or removed.
+ * @param remove - Whether to remove the definitions.
+ */
 export function modifyDefinedRoutes(defs: Record<string, string> | string[], remove: boolean = false) {
   if (remove && Array.isArray(defs)) {
     defs.forEach((k: string) => (delete definedREST[k]));
@@ -35,11 +48,21 @@ export function modifyDefinedRoutes(defs: Record<string, string> | string[], rem
   }
 }
 
-export function addAlias(alias: Record<string, string>) {
+/**
+ * Adds alias mappings for table names.
+ * @param alias - The alias mappings.
+ */
+export function addTableAlias(alias: Record<string, string>) {
   Object.assign(aliasing, alias);
 }
 
-
+/**
+ * Prepares the routes object by building route entries for each model.
+ * @param routesObj - The routes object to populate.
+ * @param TheModel - The model for which to create routes.
+ * @param controllers - The controllers associated with the models.
+ * @param includeTable - Whether to include the table in route definitions.
+ */
 function prepareRoutesObj(
   routesObj: IRoutesObject, TheModel: typeof Model,
   controllers: Record<string, typeof Controller>, includeTable: boolean | IRouteConf
@@ -50,12 +73,14 @@ function prepareRoutesObj(
     const ctrl = new C(Model);
     return ctrl.Model.tableName === tableName;
   }) || GenericController;
+
   if (includeTable === true) {
     Object.entries(definedREST).forEach(([service, action]) => {
       buildRoutesObj(routesObj, tableName, service, action, TheController, TheModel);
     });
     return;
   }
+
   const { defaultAction = 'includes', ...rest } = includeTable;
   if (defaultAction === 'excludes') {
     Object.entries(rest).forEach(([service, action]) => {
@@ -76,7 +101,7 @@ function prepareRoutesObj(
       }
       buildRoutesObj(routesObj, tableName, service, action, TheController, TheModel);
     });
-    //custom out of the definedREST
+    // Add custom routes not defined in definedREST
     Object.entries(cpRest).forEach(([service, action]) => {
       if (!action) return;
       if (action === true) action = definedREST[service];
@@ -85,6 +110,15 @@ function prepareRoutesObj(
   }
 }
 
+/**
+ * Constructs the routes object with respective service paths, actions, and controllers.
+ * @param routesObj - Object to store constructed routes.
+ * @param tableName - The table name for the model.
+ * @param service - The HTTP method and endpoint.
+ * @param action - The action to be performed.
+ * @param TheController - The controller class.
+ * @param TheModel - The model class.
+ */
 function buildRoutesObj(
   routesObj: IRoutesObject, tableName: string,
   service: string, action: string,
@@ -98,6 +132,13 @@ function buildRoutesObj(
   routesObj[`${method} ${servicePath}`] = [method, servicePath, action, TheController, TheModel];
 }
 
+/**
+ * Generates an object containing routes for each model and controller based on provided configuration.
+ * @param models - The models to generate routes for.
+ * @param controllers - The associated controllers for each model.
+ * @param config - The configuration for including or excluding routes.
+ * @returns The constructed routes object.
+ */
 export function routesObject(models: Record<string, typeof Model>, controllers: Record<string, typeof GenericController> = {}, config: IExpressRouterConf = {}) {
   const routesObj: IRoutesObject = {};
   if (config.filters) {
@@ -109,9 +150,7 @@ export function routesObject(models: Record<string, typeof Model>, controllers: 
         if (!TheModel) throw new Error(`Model for **${tableName}** Not Found`);
         prepareRoutesObj(routesObj, TheModel, controllers, includeTable as any);
       });
-    }
-    //includes!!!
-    else {
+    } else { // Include logic
       Object.values(models).forEach(TheModel => {
         const includeTable = rest[TheModel.tableName] !== undefined
           ? rest[TheModel.tableName]
@@ -127,10 +166,15 @@ export function routesObject(models: Record<string, typeof Model>, controllers: 
   return routesObj;
 }
 
+/**
+ * Lists the routes currently defined in the Express router.
+ * @param router - The Express router.
+ * @returns An array of strings representing each route method and path.
+ */
 export function listRoutes(router: express.Router) {
   const routes: string[] = [];
   router.stack.forEach((middleware: any) => {
-    if (middleware.route) { // Es una ruta definida
+    if (middleware.route) { // It's a defined route
       const method = Object.keys(middleware.route.methods)[0].toUpperCase();
       const routePath = middleware.route.path;
       routes.push(`${method} ${routePath}`);
@@ -139,6 +183,12 @@ export function listRoutes(router: express.Router) {
   return routes;
 }
 
+/**
+ * Main function to configure an Express router with dynamic routes.
+ * @param routesObject - The routes object containing route definitions.
+ * @param config - Configuration options for the router.
+ * @returns The configured Express router.
+ */
 export default function expressRouter(routesObject: IRoutesObject, {
   router = express.Router(),
   beforeProcess = (tn: string, a: string, data: any, i: string) => data,
@@ -178,9 +228,12 @@ export default function expressRouter(routesObject: IRoutesObject, {
         const inputData = await beforeProcess(controller.Model.tableName, action, all, _idx);
         const outputData = await ctrlAction(inputData);
         const payload = await afterProcess(controller.Model.tableName, action, outputData, _idx);
+
+        // Check if the output data is an error or if it needs a special response
         if (payload instanceof Error) throw payload;
         if (!payload) throw getStatusCode(503);
         else res.status(payload.status).json(payload);
+
         if (debugLog) {
           console.debug('RESPONSE', payload);
         }
@@ -196,15 +249,19 @@ export default function expressRouter(routesObject: IRoutesObject, {
           res.status((error as IStatusCode).status).json(error);
         }
       }
+
       console.timeEnd(_idx);
       console.groupEnd();
-    })
+    });
   });
+
+  // Setup a default GET route that lists all available routes
   router.get('/', (req, res) => {
     const availableRoutes = listRoutes(router);
     const success = getStatusCode(200);
     success.data = availableRoutes;
-    res.status(success.status).json(success);
+    res.status(success.status!).json(success);
   });
+
   return router;
 }

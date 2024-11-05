@@ -1,6 +1,6 @@
 import type { IStatusCode } from "./types";
 
-const statusCodes: Record<string, IStatusCode> = {
+const statusCodes: Record<string, Partial<IStatusCode>> = {
   '200.0': {
     status: 200,
     code: 0,
