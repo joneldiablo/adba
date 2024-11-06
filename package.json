@@ -20,7 +20,7 @@
     "build": "rm -rf dist/* && npm run build:cjs && npm run build:esm && typedoc",
     "doc": "typedoc",
     "test": "jest",
-    "test:e2e": "jest --config ./e2e/jest-e2e.json --forceExit"
+    "test:e2e": "jest --config ./jest.config.e2e.ts --forceExit"
   },
   "author": "joneldiablo",
   "license": "ISC",
