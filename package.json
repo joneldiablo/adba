@@ -20,20 +20,22 @@
     "build": "rm -rf dist/* && npm run build:cjs && npm run build:esm && typedoc",
     "doc": "typedoc",
     "test": "jest",
-    "test:e2e": "jest --config ./e2e/jest-e2e.json --forceExit"
+    "test:e2e": "jest --config ./jest.config.e2e.ts --forceExit"
   },
   "author": "joneldiablo",
   "license": "ISC",
   "dependencies": {
     "change-case": "^5.4.4",
     "change-case-all": "^2.1.0",
+    "dbl-utils": "^1.0.1",
     "express": "^4.21.1",
     "flat": "^5",
     "json2csv": "^6.0.0-alpha.2",
     "knex": "^3.1.0",
     "moment": "^2.30.1",
     "objection": "^3.1.5",
-    "uuid": "^11.0.2"
+    "uuid": "^11.0.2",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",

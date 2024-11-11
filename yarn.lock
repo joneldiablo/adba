@@ -2074,6 +2074,11 @@ chownr@^2.0.0:
   resolved "https://registry.yarnpkg.com/chownr/-/chownr-2.0.0.tgz#15bfbe53d2eab4cf70f18a8cd68ebe5b3cb1dece"
   integrity sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==
 
+chroma-js@^3.1.2:
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/chroma-js/-/chroma-js-3.1.2.tgz#cfb807045182228574eae5380587cdb830e985d6"
+  integrity sha512-IJnETTalXbsLx1eKEgx19d5L6SRM7cH4vINw/99p/M11HCuXGRWL+6YmCm7FWFGIo6dtWuQoQi1dc5yQ7ESIHg==
+
 ci-info@^3.2.0:
   version "3.9.0"
   resolved "https://registry.yarnpkg.com/ci-info/-/ci-info-3.9.0.tgz#4279a62028a7b1f262f3473fc9605f5e218c59b4"
@@ -2249,6 +2254,19 @@ db-errors@^0.2.3:
   version "0.2.3"
   resolved "https://registry.yarnpkg.com/db-errors/-/db-errors-0.2.3.tgz#a6a38952e00b20e790f2695a6446b3c65497ffa2"
   integrity sha512-OOgqgDuCavHXjYSJoV2yGhv6SeG8nk42aoCSoyXLZUH7VwFG27rxbavU1z+VrZbZjphw5UkDQwUlD21MwZpUng==
+
+dbl-utils@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/dbl-utils/-/dbl-utils-1.0.1.tgz#3a83059e938c9ce87495ebbaabadc738e995e20d"
+  integrity sha512-BdDwNy6VP/kaQ3D/X+135hpk0z7OFMmCToIqvWnlWUDY55MH7xEPSIsKmKqQmtgCqvVZmoIaK1gIQD/8ZYsXvA==
+  dependencies:
+    change-case-all "^2.1.0"
+    chroma-js "^3.1.2"
+    js-md5 "^0.8.3"
+    json2csv "^6.0.0-alpha.2"
+    moment "^2.30.1"
+    numeral "^2.0.6"
+    uuid "^11.0.2"
 
 debug@2.6.9:
   version "2.6.9"
@@ -3435,6 +3453,11 @@ jest@^29.7.0:
     import-local "^3.0.2"
     jest-cli "^29.7.0"
 
+js-md5@^0.8.3:
+  version "0.8.3"
+  resolved "https://registry.yarnpkg.com/js-md5/-/js-md5-0.8.3.tgz#921bab7efa95bfc9d62b87ee08a57f8fe4305b69"
+  integrity sha512-qR0HB5uP6wCuRMrWPTrkMaev7MJZwJuuw4fnwAzRgP4J4/F8RwtodOKpGp4XpqsLBFzzgqIO42efFAyz2Et6KQ==
+
 js-tokens@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
@@ -3936,6 +3959,11 @@ npmlog@^6.0.0:
     console-control-strings "^1.1.0"
     gauge "^4.0.3"
     set-blocking "^2.0.0"
+
+numeral@^2.0.6:
+  version "2.0.6"
+  resolved "https://registry.yarnpkg.com/numeral/-/numeral-2.0.6.tgz#4ad080936d443c2561aed9f2197efffe25f4e506"
+  integrity sha512-qaKRmtYPZ5qdw4jWJD6bxEf1FJEqllJrwxCLIm0sQU/A7v2/czigzOb+C2uSiFsa9lBUzeH7M1oK+Q+OLxL3kA==
 
 object-inspect@^1.13.1:
   version "1.13.2"
@@ -5044,6 +5072,11 @@ yocto-queue@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
+
+zod@^3.23.8:
+  version "3.23.8"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.23.8.tgz#e37b957b5d52079769fb8097099b592f0ef4067d"
+  integrity sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==
 
 zwitch@^2.0.4:
   version "2.0.4"
