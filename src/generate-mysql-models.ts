@@ -1,14 +1,23 @@
-import { Model, RelationMappings } from 'objection';
-import { pascalCase } from 'change-case-all';
+import { Model, RelationMappings, JSONSchema } from 'objection';
 import { Knex } from 'knex';
 
+import { deepMerge } from 'dbl-utils';
+
+import { className } from './model-utilities';
+import { IGenerateModelsOptions } from './types';
+
 /**
- * Function to generate models dynamically based on database structures for MySQL
- * @param {Knex} knexInstance - The knex instance connected to the database
- * @returns {Promise<Record<string, typeof Model>>} - Returns a promise that resolves to an object containing all generated models
+ * Generates MySQL models dynamically based on database structures.
+ * @param knexInstance - The Knex instance connected to the database.
+ * @param opts - Options including parse and format functions.
+ * @returns A promise that resolves to an object containing all generated models.
  */
-export async function generateMySQLModels(knexInstance: Knex): Promise<Record<string, typeof Model>> {
+export async function generateMySQLModels(
+  knexInstance: Knex,
+  opts: IGenerateModelsOptions = {}
+): Promise<Record<string, typeof Model>> {
   const models: Record<string, typeof Model> = {};
+  const { relationsFunc, squemaFixings, parseFunc, formatFunc } = opts;
 
   try {
     // Query table and view structures from the database
@@ -20,7 +29,6 @@ export async function generateMySQLModels(knexInstance: Knex): Promise<Record<st
         .where('table_schema', knexInstance.client.config.connection.database)
         .select('table_name AS name', knexInstance.raw(`'view' as type`))
     ]);
-
     const structures = [...tables, ...views];
 
     for (const { name: structureName, type } of structures) {
@@ -35,31 +43,33 @@ export async function generateMySQLModels(knexInstance: Knex): Promise<Record<st
         .andWhereNot('referenced_table_name', null)
         .select('column_name AS from', 'referenced_table_name AS table', 'referenced_column_name AS to');
 
-      // Defining the dynamic model class
+      // Define a dynamic model class
       const DynamicModel = class extends Model {
+        /**
+         * Returns the table name for the model.
+         */
         static get tableName(): string {
           return structureName;
         }
 
-        static get jsonSchema(): Record<string, unknown> {
+        /**
+         * Constructs the JSON schema based on the table structure.
+         * @returns The JSON schema object for the table.
+         */
+        static get jsonSchema(): JSONSchema {
           const requiredFields: string[] = [];
-          const schemaProperties: Record<string, Record<string, unknown>> = {};
+          const schemaProperties: Record<string, JSONSchema> = {};
 
           for (const column of columns) {
             const format = mapMySqlTypeToJsonFormat(column.data_type, column.column_name);
             const type = mapMySqlTypeToJsonType(column.data_type);
-            const property: Record<string, unknown> = {};
-
-            if (type !== 'buffer') {
-              property.type = type;
-            }
+            const property: JSONSchema = {
+              type: type !== 'buffer' ? type : undefined,
+              description: column.column_comment || undefined
+            };
 
             if (column.is_nullable === 'NO') {
               requiredFields.push(column.column_name);
-            }
-
-            if (column.column_comment) {
-              property.description = column.column_comment;
             }
 
             if (/^(INT|INTEGER|REAL)$/i.test(column.data_type) && column.column_key !== 'PRI') {
@@ -67,9 +77,13 @@ export async function generateMySQLModels(knexInstance: Knex): Promise<Record<st
             }
 
             property.$comment = [type, format].filter(Boolean).join('.');
-
             const prefix = type === 'buffer' ? 'x-' : '';
             schemaProperties[prefix + column.column_name] = property;
+          }
+
+          if (typeof squemaFixings === 'function') {
+            const r = squemaFixings(structureName, schemaProperties);
+            if (r) deepMerge(schemaProperties, r);
           }
 
           return {
@@ -79,18 +93,18 @@ export async function generateMySQLModels(knexInstance: Knex): Promise<Record<st
           };
         }
 
+        /**
+         * Constructs relation mappings for the model.
+         * @returns An object containing relation mappings.
+         */
         static get relationMappings(): RelationMappings {
           const relations: RelationMappings = {};
 
           for (const fk of foreignKeys) {
-            const relatedModel = Object.values(models).find(
-              (Model) => Model.tableName === fk.table
-            );
-
+            const relatedModel = Object.values(models).find((Model) => Model.tableName === fk.table);
             if (!relatedModel) {
               throw new Error(`${structureName}: Model for table ${fk.table} not found`);
             }
-
             relations[`${fk.table}`] = {
               relation: Model.BelongsToOneRelation,
               modelClass: relatedModel,
@@ -101,13 +115,39 @@ export async function generateMySQLModels(knexInstance: Knex): Promise<Record<st
             };
           }
 
+          if (typeof relationsFunc === 'function') {
+            const r = relationsFunc(structureName, relations);
+            if (r) Object.assign(relations, r);
+          }
+
           return relations;
+        }
+
+        /**
+         * Parses the database JSON.
+         * @param json - The JSON object from the database.
+         * @returns The parsed JSON object.
+         */
+        $parseDatabaseJson(json: any) {
+          json = super.$parseDatabaseJson(json);
+          return typeof parseFunc === 'function' ? parseFunc(structureName, json) : json;
+        }
+
+        /**
+         * Formats the JSON object for the database.
+         * @param json - The JSON object to be formatted.
+         * @returns The formatted JSON object.
+         */
+        $formatDatabaseJson(json: any) {
+          json = super.$formatDatabaseJson(json);
+          return typeof formatFunc === 'function' ? formatFunc(structureName, json) : json;
         }
       };
 
       const pascalCaseName = className(structureName);
       const suffix = type === 'table' ? 'Table' : 'View';
       const modelName = `${pascalCaseName}${suffix}Model`;
+
       Object.defineProperty(DynamicModel, 'name', { value: modelName });
       DynamicModel.knex(knexInstance);
 
@@ -121,9 +161,9 @@ export async function generateMySQLModels(knexInstance: Knex): Promise<Record<st
 }
 
 /**
- * Function to map MySQL types to JSON Schema types
- * @param {string} mysqlType - The MySQL data type
- * @returns {string} - Corresponding JSON Schema type
+ * Maps MySQL data types to corresponding JSON Schema types.
+ * @param mysqlType - The MySQL data type.
+ * @returns The JSON Schema type.
  */
 export function mapMySqlTypeToJsonType(mysqlType: string): string {
   const baseType = mysqlType.toUpperCase();
@@ -148,16 +188,16 @@ export function mapMySqlTypeToJsonType(mysqlType: string): string {
     DATE: 'string',
     DATETIME: 'string',
     TIMESTAMP: 'string',
-    TIME: 'string'
+    TIME: 'string',
   };
   return typeMap[baseType] || 'string';
 }
 
 /**
- * Function to map MySQL types to JSON Schema formats
- * @param {string} mysqlType - The MySQL data type
- * @param {string} colName - Allow to infer more formats, like email, phone....
- * @returns {string} - Corresponding JSON Schema type
+ * Maps MySQL data types to corresponding JSON Schema formats.
+ * @param mysqlType - The MySQL data type.
+ * @param colName - The column name for potential additional format inference.
+ * @returns The JSON Schema format if applicable.
  */
 export function mapMySqlTypeToJsonFormat(mysqlType: string, colName: string): string | undefined {
   const baseType = mysqlType.toUpperCase();
@@ -170,12 +210,3 @@ export function mapMySqlTypeToJsonFormat(mysqlType: string, colName: string): st
   return typeMap[baseType] || undefined;
 }
 
-/**
- * Function to convert string into PascalCase
- * It handles strings presented in kebab-case or snake_case
- * @param {string} str - The string to convert
- * @returns {string} - The converted PascalCase string
- */
-function className(str: string): string {
-  return pascalCase(str);
-}

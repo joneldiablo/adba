@@ -1,4 +1,5 @@
-import { Model } from "objection";
+import { JSONSchema, Model, RelationMappings } from "objection";
+
 import Controller from "./controller";
 
 export type IValueTypes = 'string' | 'boolean' | 'number' | 'array' | 'object';
@@ -69,3 +70,10 @@ export type IIds = {
   id?: number | number[];
   ids?: number | number[];
 }
+
+export type IGenerateModelsOptions = {
+  relationsFunc?: (tableName: string, relations: RelationMappings) => RelationMappings;
+  squemaFixings?: (tableName: string, schema: Record<string, JSONSchema>) => Record<string, JSONSchema>;
+  parseFunc?: (tableName: string, json: any) => any;
+  formatFunc?: (tableName: string, json: any) => any;
+};
