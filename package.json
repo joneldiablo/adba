@@ -1,6 +1,6 @@
 {
   "name": "adba",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Any DataBase to API",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
