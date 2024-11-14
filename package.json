@@ -33,7 +33,7 @@
   "license": "ISC",
   "dependencies": {
     "change-case-all": "^2.1.0",
-    "dbl-utils": "^1.0.1",
+    "dbl-utils": "^1.0.2",
     "express": "^4.21.1",
     "flat": "^5",
     "json2csv": "^6.0.0-alpha.2",
