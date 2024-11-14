@@ -13,6 +13,9 @@
     "moduleResolution": "Node",
     "module": "CommonJS",
     "target": "ES6",
+    "lib": [
+      "es2019"
+    ],
     "skipLibCheck": true,
     "outDir": "./dist/cjs",
     "declaration": true,

@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import useragent from 'useragent';
 
 
-export function encrypt(text, password, ivString) {
+export function encrypt(text: string, password: string, ivString: string) {
   const iv = ivString ? Buffer.from(ivString, 'hex') : crypto.randomBytes(16);
   const key = crypto.scryptSync(password, 'salt', 32);
   const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
@@ -13,7 +13,7 @@ export function encrypt(text, password, ivString) {
   return { encryptedData: encrypted, iv: iv.toString('hex') };
 }
 
-export function decrypt(encryptedData, password, ivString) {
+export function decrypt(encryptedData: string, password: string, ivString: string) {
   const key = crypto.scryptSync(password, 'salt', 32);
   const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivString, 'hex'));
   let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
@@ -38,7 +38,7 @@ export function generateCode() {
  * @param {string} input - The input string from which to generate the key.
  * @returns {Buffer} A 32-byte Buffer containing the key.
  */
-const generateKeyFromInput = (input) => {
+const generateKeyFromInput = (input: string) => {
   // Create a SHA-256 hash of the input
   const hash = crypto.createHash('sha256');
   hash.update(input);
@@ -54,7 +54,7 @@ const generateKeyFromInput = (input) => {
  * @param {number|string} expiresIn - The expiration time for the token
  * @returns {string} - Returns the URL-safe encrypted token
  */
-export const buildToken = (data, pass, ivString, expiresIn) => {
+export const buildToken = (data: { payload: any }, pass: string, ivString: string, expiresIn: string) => {
   // Encrypt the JSON content
   const key_in_bytes = generateKeyFromInput(pass);
   const cipher = crypto.createCipheriv('aes-256-cbc', key_in_bytes, Buffer.from(ivString, 'hex'));
@@ -75,13 +75,17 @@ export const buildToken = (data, pass, ivString, expiresIn) => {
  * @param {string} ivString - ivString
  * @returns {Object|null} - Returns the decrypted payload data, or null if decryption fails
  */
-export const readToken = (encryptedToken, pass, ivString) => {
+export const readToken = (encryptedToken: string, pass: string, ivString: string) => {
   try {
     // Decode the token first if it is URL-encoded
     const token = decodeURIComponent(encryptedToken);
 
     // Verify and decode the JWT token
     const decoded = jwt.verify(token, pass);
+
+    if (typeof decoded !== 'object') {
+      throw new Error("decoded data is not an object, spect an object:\n" + decoded);
+    }
 
     // Decrypt the payload
     const key_in_bytes = generateKeyFromInput(pass);
@@ -98,7 +102,7 @@ export const readToken = (encryptedToken, pass, ivString) => {
   }
 };
 
-export async function generatePasswordHash(password) {
+export async function generatePasswordHash(password: string) {
   try {
     const saltRounds = 10;
     const hash = await bcrypt.hash(password, saltRounds);
@@ -108,7 +112,7 @@ export async function generatePasswordHash(password) {
   }
 }
 
-export async function verifyPasswordHash(password, hash) {
+export async function verifyPasswordHash(password: string, hash: string) {
   try {
     const isMatch = await bcrypt.compare(password, hash);
     return isMatch;
@@ -117,7 +121,7 @@ export async function verifyPasswordHash(password, hash) {
   }
 }
 
-export function getClientType(userAgent, device) {
+export function getClientType(userAgent: string, device?: string) {
   const agent = useragent.parse(userAgent);
   return agent.family;
 }
