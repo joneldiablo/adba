@@ -6,10 +6,11 @@
 import { Model } from "objection";
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
-import { unflatten } from 'flat';
 import moment from 'moment';
 import { kebabCase } from "change-case-all";
 import { v4 as uuidv4 } from 'uuid';
+
+import { unflatten } from 'dbl-utils';
 
 import type {
   IControllerMethods, IExpressRouterConf,
@@ -18,6 +19,7 @@ import type {
 import GenericController from "./controller";
 import Controller from "./controller";
 import getStatusCode from "./status-codes";
+
 
 const aliasing: Record<string, string> = {};
 
