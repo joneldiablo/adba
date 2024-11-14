@@ -8,11 +8,18 @@
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
-    }
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts",
+      "source": "./src/index.ts"
+    },
+    "./ts/*": "./src/*",
+    "./esm/*": "./dist/esm/*",
+    "./cjs/*": "./dist/cjs/*"
   },
   "directories": {
-    "dist": "dist"
+    "ts": "src",
+    "esm": "dist/esm",
+    "cjs": "dist/cjs"
   },
   "scripts": {
     "build:cjs": "tsc -p tsconfig.json",
