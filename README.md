@@ -2,19 +2,21 @@
 
 Generate API REST from any SQL DataBase
 
+[![Documentation](https://img.shields.io/badge/docs-view-green.svg)](https://joneldiablo.github.io/adba/modules.html)
+
 ## DataBases
 
-- MSSQL
+- SQLite
 - MySQL
 - PostgreSQL
-- SQLite
+- MSSQL
 
 ## TODO
 
-- test on MSSQL
 - test on PostgreSQL
+- test on MSSQL
 
-## example
+## Example
 
 ```ts
 import express from 'express';
@@ -22,7 +24,7 @@ import Knex from 'knex';
 import morgan from 'morgan';
 import cors from 'cors';
 
-import { expressRouter, routesObject, generateSQLiteModels } from 'adba';
+import { expressRouter, routesObject, generateModels } from 'adba';
 
 // Config Knex for SQLite
 const knexInstance = Knex({
@@ -42,7 +44,7 @@ const startServer = async () => {
   app.use(express.json());
   app.use(morgan('dev'));
 
-  const models = await generateSQLiteModels(knexInstance);
+  const models = await generateModels(knexInstance);
 
   // build the routes using only the generated models, easy easy
   const myRoutesObject = routesObject(models);
@@ -58,3 +60,7 @@ const startServer = async () => {
 
 startServer().catch(err => console.error(err));
 ```
+
+## Documentation
+
+For a detailed description of each module and function, visit the [full documentation](https://joneldiablo.github.io/adba/modules.html) **automagically** generated with Typedoc. The documentation includes usage examples and in-depth explanations of each function.
