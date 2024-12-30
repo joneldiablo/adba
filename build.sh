@@ -64,6 +64,12 @@ fi
 # builds
 yarn build
 
+# Check if build was successful
+if [ $? -ne 0 ]; then
+  echo "Build failed. Stopping the script."
+  exit 1
+fi
+
 # Update version and capture the new version
 new_version=$(node update-version.js)
 

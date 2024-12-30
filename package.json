@@ -24,7 +24,7 @@
   "scripts": {
     "build:cjs": "tsc -p tsconfig.json",
     "build:esm": "tsc -p tsconfig.esm.json",
-    "build": "rm -rf dist/* && npm run build:cjs && npm run build:esm && typedoc",
+    "build": "jest && rm -rf dist/* && yarn build:cjs && yarn build:esm && typedoc",
     "doc": "typedoc",
     "test": "jest",
     "test:e2e": "jest --config ./jest.config.e2e.ts --forceExit"
