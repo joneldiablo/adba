@@ -32,13 +32,32 @@ export interface KnexInstanceOptions {
 /**
  * Interface for extends knex object
  */
-export interface DblDB extends knex.Knex<any, unknown[]> {
-  $dbl_destroy?: Function
+export interface RefDblDB {
+  current: Knex<any, any[]>;
 }
 
-export interface RefDblDB {
-  current: DblDB
+function wrapKnexInstance(knexInstance: Knex<any, any[]>, conn: any, server: any) {
+  const originalDestroy = knexInstance.destroy.bind(knexInstance);
+
+  return new Proxy(knexInstance, {
+    get(target, prop) {
+      if (prop === 'destroy') {
+        return async () => {
+          const result = await originalDestroy();
+          conn.destroy();
+          await new Promise((resolve) => server.close(() => {
+            console.log('tunnel & mysql conn CLOSE');
+            resolve(null);
+          }));
+          return result;
+        };
+      }
+
+      return Reflect.get(target, prop);
+    }
+  });
 }
+
 
 /**
  * Helper to create and validate Knex instance
@@ -46,6 +65,7 @@ export interface RefDblDB {
  * @returns Object with `.current` knex instance or false if connection fails
  */
 async function createKnex(config: Knex.Config): Promise<RefDblDB | false> {
+
   const db = knex(config);
 
   db.on('query', (queryData) => {
@@ -101,7 +121,7 @@ async function createKnex(config: Knex.Config): Promise<RefDblDB | false> {
  * @param knexConfig Knex configuration object
  * @returns Object with `.current` knex instance or false if fails
  */
-async function createTunnel(tunnelConfig: any, knexConfig: Knex.Config): Promise<{ current: Knex } | false> {
+async function createTunnel(tunnelConfig: any, knexConfig: Knex.Config): Promise<RefDblDB | false> {
   const { tunnelOptions, serverOptions, sshOptions, forwardOptions } = tunnelConfig;
 
   const [server, conn] = await tunnel(tunnelOptions, serverOptions, sshOptions, forwardOptions);
@@ -115,31 +135,7 @@ async function createTunnel(tunnelConfig: any, knexConfig: Knex.Config): Promise
   console.log('TUNNEL on port:', port);
 
   const db = await createKnex(knexConfig);
-
-  if (db) {
-    db.current.$dbl_destroy = db.current.destroy;
-    db.current.destroy = async function () {
-      let toReturn;
-      if (typeof db.current.$dbl_destroy === 'function') {
-        toReturn = await db.current.$dbl_destroy();
-      }
-      conn.destroy();
-      await new Promise((resolve) => server.close(() => {
-        console.log('tunnel & mysql conn CLOSE');
-        resolve(null);
-      }));
-      return toReturn;
-    };
-
-    conn.on('close', async () => {
-      console.log('connection lost, reconnect');
-      const db1 = await createTunnel(tunnelConfig, knexConfig);
-      if (!db1) return console.error('Error updating database');
-      db.current = db1.current;
-    });
-
-    return db;
-  } else {
+  if (!db) {
     conn.destroy();
     await new Promise((resolve) => server.close(() => {
       console.log('tunnel & mysql conn CLOSE');
@@ -147,6 +143,9 @@ async function createTunnel(tunnelConfig: any, knexConfig: Knex.Config): Promise
     }));
     return false;
   }
+
+  db.current = wrapKnexInstance(db.current, conn, server);
+  return db;
 }
 
 /**
@@ -164,7 +163,7 @@ async function knexInstances({
   password,
   database,
   ...conf
-}: KnexInstanceOptions = {}): Promise<{ current: Knex } | false> {
+}: KnexInstanceOptions = {}): Promise<RefDblDB | false> {
   const { tunnel = false, knexConfig = {}, knexConnection = {} } = conf;
 
   const kconf: Knex.Config = {
