@@ -7,7 +7,7 @@ import { createTunnel as tunnel } from 'tunnel-ssh';
 /**
  * Interface for SSH Tunnel options
  */
-interface TunnelSSHOptions {
+export interface TunnelSSHOptions {
   privateKey: string;
   passphrase?: string;
   username: string;
@@ -19,7 +19,7 @@ interface TunnelSSHOptions {
 /**
  * Interface for additional knex connection config
  */
-interface KnexInstanceOptions {
+export interface KnexInstanceOptions {
   host?: string;
   user?: string;
   password?: string;
@@ -32,11 +32,11 @@ interface KnexInstanceOptions {
 /**
  * Interface for extends knex object
  */
-interface DblDB extends knex.Knex<any, unknown[]> {
+export interface DblDB extends knex.Knex<any, unknown[]> {
   $dbl_destroy?: Function
 }
 
-interface RefDblDB {
+export interface RefDblDB {
   current: DblDB
 }
 
