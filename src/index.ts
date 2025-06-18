@@ -1,8 +1,9 @@
-export * from "zod";
+export * as zod from "zod";
 export { default as Controller } from "./controller";
 export { default as expressRouter } from "./express-router";
 export { default as formatData } from "./format-data";
 export { default as getStatusCode } from "./status-codes";
+export { default as knexInstances } from "./knex-instances";
 export * from "./express-router";
 export * from "./format-data";
 export * from "./generate-models";
