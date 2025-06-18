@@ -58,7 +58,7 @@ const generateExportsAndDirectories = () => {
 
   const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
 
-  const srcDir = path.join(process.cwd(), 'src/js');
+  const srcDir = path.join(process.cwd(), 'src');
   const distDir = path.join(process.cwd(), 'dist');
 
   if (!fs.existsSync(distDir)) {
@@ -75,14 +75,14 @@ const generateExportsAndDirectories = () => {
       import: "./dist/esm/index.js",
       require: "./dist/cjs/index.js",
       types: "./dist/types/index.d.ts",
-      source: getSourceFilePath("./src/js/index")
+      source: getSourceFilePath("./src/index")
     }
   };
 
   if (fs.existsSync(esmDir) && fs.existsSync(cjsDir) && fs.existsSync(typesDir)) {
     const esmFiles = getFilesRecursively(esmDir, esmDir);
     esmFiles.forEach(file => {
-      const baseFilePath = `./src/js/${removeExtension(file).replace(/\\/g, '/')}`;
+      const baseFilePath = `./src/${removeExtension(file).replace(/\\/g, '/')}`;
       const key = `./${removeExtension(file).replace(/\\/g, '/')}`;
       exportsConfig[key] = {
         import: `./dist/esm/${file.replace(/\\/g, '/')}`,

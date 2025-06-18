@@ -1,7 +1,7 @@
 import type { Knex } from 'knex';
 import type { Model } from 'objection';
 import setupDatabase from './utils/db-sqlite';
-import { generateModels } from '../src/utils/generate-models';
+import { generateModels } from '../src/generate-models';
 
 describe('SQLite Database Tests', () => {
   let knexInstance: Knex;

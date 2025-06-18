@@ -1,6 +1,7 @@
-import { routesObject, IRoutesObject, IExpressRouterConf, addAlias } from '../src/utils/express-router';
+import { routesObject, addTableAlias } from '../src/express-router';
+import { IRoutesObject, IExpressRouterConf } from '../src/types';
 import { Model } from 'objection';
-import GenericController from '../src/utils/controller';
+import GenericController from '../src/controller';
 
 describe('routesObject function', () => {
   class TestModel extends Model {
@@ -138,7 +139,7 @@ describe('routesObject function', () => {
   });
 
   it('should return the correct ALIAS routes object', () => {
-    addAlias({
+    addTableAlias({
       test_table: 'alias-for-table'
     });
     const result: IRoutesObject = routesObject(models, mockControllers, mockConfig);

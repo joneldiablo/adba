@@ -23,7 +23,7 @@ export type IExtraRules = { [key: string]: ((value: any) => any) };
 
 export type IStatusCode = {
   error: boolean;
-  succes: boolean;
+  success: boolean;
   status: number;
   code: number;
   description: string;

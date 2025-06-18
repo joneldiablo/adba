@@ -12,9 +12,96 @@
       "types": "./dist/types/index.d.ts",
       "source": "./src/index.ts"
     },
-    "./ts/*": "./src/*",
-    "./esm/*": "./dist/esm/*",
-    "./cjs/*": "./dist/cjs/*"
+    "./controller": {
+      "import": "./dist/esm/controller.js",
+      "require": "./dist/cjs/controller.js",
+      "types": "./dist/types/controller.d.ts",
+      "source": "./src/controller.ts"
+    },
+    "./crypt": {
+      "import": "./dist/esm/crypt.js",
+      "require": "./dist/cjs/crypt.js",
+      "types": "./dist/types/crypt.d.ts",
+      "source": "./src/crypt.ts"
+    },
+    "./email": {
+      "import": "./dist/esm/email.js",
+      "require": "./dist/cjs/email.js",
+      "types": "./dist/types/email.d.ts",
+      "source": "./src/email.ts"
+    },
+    "./express-router": {
+      "import": "./dist/esm/express-router.js",
+      "require": "./dist/cjs/express-router.js",
+      "types": "./dist/types/express-router.d.ts",
+      "source": "./src/express-router.ts"
+    },
+    "./format-data": {
+      "import": "./dist/esm/format-data.js",
+      "require": "./dist/cjs/format-data.js",
+      "types": "./dist/types/format-data.d.ts",
+      "source": "./src/format-data.ts"
+    },
+    "./generate-models": {
+      "import": "./dist/esm/generate-models.js",
+      "require": "./dist/cjs/generate-models.js",
+      "types": "./dist/types/generate-models.d.ts",
+      "source": "./src/generate-models.ts"
+    },
+    "./generate-mssql-models": {
+      "import": "./dist/esm/generate-mssql-models.js",
+      "require": "./dist/cjs/generate-mssql-models.js",
+      "types": "./dist/types/generate-mssql-models.d.ts",
+      "source": "./src/generate-mssql-models.ts"
+    },
+    "./generate-mysql-models": {
+      "import": "./dist/esm/generate-mysql-models.js",
+      "require": "./dist/cjs/generate-mysql-models.js",
+      "types": "./dist/types/generate-mysql-models.d.ts",
+      "source": "./src/generate-mysql-models.ts"
+    },
+    "./generate-postgresql-models": {
+      "import": "./dist/esm/generate-postgresql-models.js",
+      "require": "./dist/cjs/generate-postgresql-models.js",
+      "types": "./dist/types/generate-postgresql-models.d.ts",
+      "source": "./src/generate-postgresql-models.ts"
+    },
+    "./generate-sqlite-models": {
+      "import": "./dist/esm/generate-sqlite-models.js",
+      "require": "./dist/cjs/generate-sqlite-models.js",
+      "types": "./dist/types/generate-sqlite-models.d.ts",
+      "source": "./src/generate-sqlite-models.ts"
+    },
+    "./index": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts",
+      "source": "./src/index.ts"
+    },
+    "./knex-instances": {
+      "import": "./dist/esm/knex-instances.js",
+      "require": "./dist/cjs/knex-instances.js",
+      "types": "./dist/types/knex-instances.d.ts",
+      "source": "./src/knex-instances.ts"
+    },
+    "./model-utilities": {
+      "import": "./dist/esm/model-utilities.js",
+      "require": "./dist/cjs/model-utilities.js",
+      "types": "./dist/types/model-utilities.d.ts",
+      "source": "./src/model-utilities.ts"
+    },
+    "./status-codes": {
+      "import": "./dist/esm/status-codes.js",
+      "require": "./dist/cjs/status-codes.js",
+      "types": "./dist/types/status-codes.d.ts",
+      "source": "./src/status-codes.ts"
+    },
+    "./types": {
+      "import": "./dist/esm/types.js",
+      "require": "./dist/cjs/types.js",
+      "types": "./dist/types/types.d.ts",
+      "source": "./src/types.ts"
+    }
   },
   "directories": {
     "ts": "src",
@@ -32,11 +119,6 @@
   "author": "joneldiablo",
   "license": "ISC",
   "dependencies": {
-    "@types/bcrypt": "^5.0.2",
-    "@types/jsonwebtoken": "^9.0.7",
-    "@types/mjml": "^4.7.4",
-    "@types/nodemailer": "^6.4.16",
-    "@types/useragent": "^2.3.4",
     "bcrypt": "^5.1.1",
     "change-case-all": "^2.1.0",
     "dbl-utils": "^1.0.5",
@@ -54,6 +136,11 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/mjml": "^4.7.4",
+    "@types/nodemailer": "^6.4.16",
+    "@types/useragent": "^2.3.4",
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
     "@types/cors": "^2.8.17",
@@ -72,7 +159,8 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typedoc": "^0.26.11",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "sqlite3": "^5.1.7"
   },
   "repository": {
     "type": "git",

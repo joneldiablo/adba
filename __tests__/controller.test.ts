@@ -1,7 +1,7 @@
 import { Model } from 'objection';
 
-import Controller from '../src/utils/controller';
-import { generateModels } from '../src/utils/generate-models';
+import Controller from '../src/controller';
+import { generateModels } from '../src/generate-models';
 
 import setupDatabase from './utils/db-sqlite';
 

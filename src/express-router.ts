@@ -20,7 +20,6 @@ import GenericController from "./controller";
 import Controller from "./controller";
 import getStatusCode from "./status-codes";
 
-
 const aliasing: Record<string, string> = {};
 
 /**
