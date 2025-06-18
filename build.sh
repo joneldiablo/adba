@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Variable initialization
 OTP=""
 
@@ -12,30 +11,30 @@ usage() {
 # Argument parsing
 while getopts ":-:" opt; do
   case ${opt} in
-  -)
-    case "${OPTARG}" in
-    otp)
-      OTP="${!OPTIND}"
-      OPTIND=$(($OPTIND + 1))
+    -)
+      case "${OPTARG}" in
+        otp)
+          OTP="${!OPTIND}"
+          OPTIND=$(($OPTIND + 1))
+          ;;
+        *)
+          echo "Invalid option: --${OPTARG}" >&2
+          usage
+          ;;
+      esac
       ;;
-    *)
-      echo "Invalid option: --${OPTARG}" >&2
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
       usage
       ;;
-    esac
-    ;;
-  \?)
-    echo "Invalid option: -$OPTARG" >&2
-    usage
-    ;;
-  :)
-    echo "Option -$OPTARG requires an argument." >&2
-    usage
-    ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      usage
+      ;;
   esac
 done
 
-##------ Check for uncommitted changes
+# Check for uncommitted changes
 if git diff-index --quiet HEAD --; then
   echo "No uncommitted changes. Continuing..."
 else
@@ -51,7 +50,6 @@ if [ "$current_branch" != "master" ]; then
   # Switch to master branch
   git checkout master
   git merge -
-
   # Check for merge conflicts
   if [ $? -ne 0 ]; then
     echo "Merge conflicts detected. Please resolve them and then run the script again."
@@ -64,6 +62,13 @@ fi
 # builds
 yarn build
 
+# Check if build was successful
+if [ $? -ne 0 ]; then
+  echo "Build failed. Stopping the script."
+  exit 1
+fi
+
+node exports.js
 # Update version and capture the new version
 new_version=$(node update-version.js)
 
@@ -84,5 +89,5 @@ fi
 # Switch back to the previous branch
 git checkout -
 
-# shows new version
+# Show new version
 echo "$new_version"

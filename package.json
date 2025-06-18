@@ -24,7 +24,7 @@
   "scripts": {
     "build:cjs": "tsc -p tsconfig.json",
     "build:esm": "tsc -p tsconfig.esm.json",
-    "build": "rm -rf dist/* && npm run build:cjs && npm run build:esm && typedoc",
+    "build": "jest && rm -rf dist/* && yarn build:cjs && yarn build:esm && typedoc",
     "doc": "typedoc",
     "test": "jest",
     "test:e2e": "jest --config ./jest.config.e2e.ts --forceExit"
@@ -51,7 +51,7 @@
     "objection": "^3.1.5",
     "useragent": "^2.3.0",
     "uuid": "^11.0.2",
-    "zod": "^3.23.8"
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
@@ -64,6 +64,7 @@
     "@types/lodash": "^4.17.12",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.7.9",
+    "@types/tunnel-ssh": "^5.1.0",
     "@types/uuid": "^10.0.0",
     "babel-jest": "^29.7.0",
     "jest": "^29.7.0",
