@@ -1,10 +1,8 @@
 import nodemailer, { Transporter, SendMailOptions } from "nodemailer";
-import fs from "fs";
-import mjml2html from "mjml";
 import Handlebars from "handlebars";
 import { Model } from "objection";
 
-import { splitAndFlat, IArrayString } from "dbl-utils";
+import { splitAndFlat, t, flatten } from "dbl-utils";
 import moment from "moment";
 
 interface IEmailProcessModel extends Model, SendMailOptions {
@@ -15,6 +13,11 @@ interface IEmailProcessModel extends Model, SendMailOptions {
   lastAttempt: string;
   attempts: number;
   active: boolean;
+}
+
+export type ITemplate = {
+  subject: string | string[];
+  template: string
 }
 
 export type IEmailConfig = {
@@ -29,6 +32,7 @@ export type IEmailConfig = {
   runningSchedule: boolean;
   priorDelay: number;
   delay: number;
+  templates: Record<string, ITemplate>
 }
 
 const config: IEmailConfig = {
@@ -43,6 +47,7 @@ const config: IEmailConfig = {
   runningSchedule: false,
   priorDelay: 1000 * 60,
   delay: 1000 * 60 * 60,
+  templates: {}
 };
 
 export function setEmailProcessModel(EmailProcessModel: typeof Model) {
@@ -61,44 +66,20 @@ export function setConfig(cfg: Partial<IEmailConfig>) {
   Object.assign(config, cfg);
 }
 
-const buildTemplate = (template: string, data: Record<string, any>) => {
-  let text;
-  let html;
-  let subject;
-  //encriptar correo para almacenarlo, desencriptar para enviarlo
-  switch (template) {
-    case 'otp':
-      const mjmlOtp = fs.readFileSync('./templates/otp.mjml', 'utf8');
-      const { html, errors } = mjml2html(mjmlOtp, { filePath: './templates' });
-      if (errors.length) {
-        console.error(
-          errors.filter(e => !e.message.includes('has invalid value: {'))
-        );
-      }
-      const template = Handlebars.compile(html);
-      const htmlBuilded = template({
-        ...data,
-        frontend: process.env.FRONTEND,
-        colorPrimary: config.colorPrimary
-      });
-      return {
-        subject: '[Kreditor] Código de validación',
-        html: htmlBuilded,
-        text: [
-          data.userName,
-          ' este es tu código de validación: ',
-          data.otp,
-          '\n',
-          'Este dato es personal e intrasferible. Por favor, no compartas este código con nadie.'
-        ].join(' '),
-        cc: [],
-        bcc: [],
-        attachments: []
-      }
+const buildTemplate = (templateName: string, data: Record<string, any>) => {
+  const text = Object.entries(flatten(data)).map(
+    ([key, value]) => `${t(key, 'emailKeyTemplate>' + templateName)}: ${t(value, 'emailValueTemplate>' + templateName)}`
+  ).join('\n');
+  let html = text;
+  let subject = data.subject;
+  if (config.templates[templateName]) {
+    const subjectTemplater = Handlebars.compile(config.templates[templateName].subject);
+    subject = subjectTemplater(data);
 
-    default:
-      break;
+    const htmlTemplater = Handlebars.compile(config.templates[templateName].template);
+    html = htmlTemplater(data);
   }
+
   return {
     subject,
     html,
@@ -161,6 +142,7 @@ export const enqueueEmailList = async (transportConf: Partial<Transporter>) => {
   if (!config.SystemModel) return false;
   if (!config.EmailProcessModel) return false;
   let t9r: Transporter;
+  
   try {
     //configuration of oauth2.0
     /* const sysTokens: ISystemConfigModel | null =
