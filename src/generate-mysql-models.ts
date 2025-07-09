@@ -3,7 +3,7 @@ import { Knex } from 'knex';
 
 import { deepMerge } from 'dbl-utils';
 
-import { className } from './model-utilities';
+import { className, jsonSchemaToColumns, ITableColumn } from './model-utilities';
 import { IGenerateModelsOptions } from './types';
 
 /**
@@ -17,7 +17,7 @@ export async function generateMySQLModels(
   opts: IGenerateModelsOptions = {}
 ): Promise<Record<string, typeof Model>> {
   const models: Record<string, typeof Model> = {};
-  const { relationsFunc, squemaFixings, parseFunc, formatFunc } = opts;
+  const { relationsFunc, squemaFixings, columnsFunc, parseFunc, formatFunc } = opts;
 
   try {
     // Query table and view structures from the database
@@ -121,6 +121,19 @@ export async function generateMySQLModels(
           }
 
           return relations;
+        }
+
+        /**
+         * Columns information derived from the JSON schema.
+         */
+        static get columns(): Record<string, ITableColumn> {
+          const { properties = {}, required = [] } = this.jsonSchema as any;
+          const cols = jsonSchemaToColumns(properties, required as string[]);
+          if (typeof columnsFunc === 'function') {
+            const r = columnsFunc(structureName, cols);
+            if (r) deepMerge(cols, r);
+          }
+          return cols;
         }
 
         /**

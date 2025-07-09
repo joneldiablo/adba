@@ -1,4 +1,5 @@
 import { JSONSchema, Model, RelationMappings } from "objection";
+import { ITableColumn } from "./model-utilities";
 
 import Controller from "./controller";
 
@@ -75,6 +76,6 @@ export type IIds = {
 export type IGenerateModelsOptions = {
   relationsFunc?: (tableName: string, relations: RelationMappings) => RelationMappings;
   squemaFixings?: (tableName: string, schema: Record<string, JSONSchema>) => Record<string, JSONSchema>;
+  columnsFunc?: (tableName: string, columns: Record<string, ITableColumn>) => Record<string, ITableColumn>;
   parseFunc?: (tableName: string, json: any) => any;
-  formatFunc?: (tableName: string, json: any) => any;
-};
+  formatFunc?: (tableName: string, json: any) => any;};
