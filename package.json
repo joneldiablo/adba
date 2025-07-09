@@ -96,6 +96,12 @@
       "types": "./dist/types/status-codes.d.ts",
       "source": "./src/status-codes.ts"
     },
+    "./dump-database": {
+      "import": "./dist/esm/dump-database.js",
+      "require": "./dist/cjs/dump-database.js",
+      "types": "./dist/types/dump-database.d.ts",
+      "source": "./src/dump-database.ts"
+    },
     "./types": {
       "import": "./dist/esm/types.js",
       "require": "./dist/cjs/types.js",
