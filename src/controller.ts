@@ -2,6 +2,7 @@ import { Model, QueryBuilderType, JSONSchema, WhereMethod } from 'objection';
 
 import type { IIds, ISearch, IStatusCode } from './types';
 import getStatusCode from './status-codes';
+import { jsonSchemaToColumns } from './model-utilities';
 
 /**
  * @class Controller
@@ -301,6 +302,21 @@ export default class Controller {
     return queryBuilderIn
       .then((resp: any) => this.success(resp))
       .catch((error: Error) => this.error(error));
+  }
+
+  /**
+   * Returns metadata information about the table.
+   *
+   * @returns {Promise<IStatusCode>} The promise with table metadata.
+   */
+  public async meta(): Promise<IStatusCode> {
+    const { properties = {}, required = [] } = this.Model.jsonSchema as any;
+    const data = {
+      tableName: this.Model.tableName,
+      jsonSchema: this.Model.jsonSchema,
+      columns: jsonSchemaToColumns(properties, required as string[]),
+    };
+    return this.successMerge({ data });
   }
 
   /**
