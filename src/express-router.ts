@@ -34,6 +34,7 @@ const definedREST: Record<string, string> = {
   'GET /:id': 'selectById',
   'PATCH /:id': 'update',
   'DELETE /:id': 'delete',
+  'GET /meta': 'meta',
 };
 
 /**

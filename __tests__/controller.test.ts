@@ -84,4 +84,13 @@ describe('TEST Controller on test-one table', () => {
     const checkResponse = await apiController.selectById({ id: 2 });
     expect(checkResponse.success).toBe(false);
   });
+
+  test('meta should return table metadata', async () => {
+    const response = await apiController.meta();
+    expect(response.success).toBe(true);
+    expect(response.data.tableName).toBe(models.TestOneTableModel.tableName);
+    expect(response.data.jsonSchema).toEqual(models.TestOneTableModel.jsonSchema);
+    expect(response.data.columns).toBeDefined();
+    expect(response.data.columns.id.name).toBe('id');
+  });
 });
