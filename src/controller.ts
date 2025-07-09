@@ -371,9 +371,10 @@ export default class Controller {
     const { properties = {}, required = [] } = this.Model.jsonSchema as any;
 
     const columnsGetter = (this.Model as any).columns;
-    let columns = jsonSchemaToColumns(properties, required as string[]);
-    if (typeof columnsGetter === "function")
-      columns = deepMerge(columns, columnsGetter.call(this.Model) || {});
+    const columns =
+      typeof columnsGetter === "function"
+        ? columnsGetter.call(this.Model)
+        : jsonSchemaToColumns(properties, required as string[]);
 
     const data = {
       tableName: this.Model.tableName,
