@@ -11,6 +11,15 @@ Generate API REST from any SQL DataBase
 - PostgreSQL
 - MSSQL
 
+## Features
+
+- Generate Objection.js models from your database using `generateModels`.
+- Build an Express router with full CRUD routes via `routesObject` and `expressRouter`.
+- `GET /` on the router lists all registered routes for quick discovery.
+- Each table additionally exposes `GET /<table>/meta` returning its JSON schema and converted `columns`.
+- Configure which tables and methods are exposed and alias table names as needed.
+- Utility helpers cover status codes, data formatting, encryption/token helpers and email sending.
+
 ## TODO
 
 - test on PostgreSQL
