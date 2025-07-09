@@ -16,3 +16,4 @@ export * from "./generate-sqlite-models";
 export * from "./knex-instances";
 export * from "./status-codes";
 export * from "./types";
+export * from "./model-utilities";

@@ -37,6 +37,7 @@ describe('routesObject function', () => {
       'GET /test-table/:id': ['GET', '/test-table/:id', 'selectById', TestController, TestModel],
       'PATCH /test-table/:id': ['PATCH', '/test-table/:id', 'update', TestController, TestModel],
       'DELETE /test-table/:id': ['DELETE', '/test-table/:id', 'delete', TestController, TestModel],
+      'GET /test-table/meta': ['GET', '/test-table/meta', 'meta', TestController, TestModel],
     }));
   });
 
@@ -70,6 +71,7 @@ describe('routesObject function', () => {
       'GET /non-existent-table/:id',
       'PATCH /non-existent-table/:id',
       'DELETE /non-existent-table/:id',
+      'GET /non-existent-table/meta',
     ];
     notKeys.forEach(k => {
       expect(r).not.toHaveProperty(k);
@@ -84,6 +86,7 @@ describe('routesObject function', () => {
           defaultAction: 'excludes',
           'GET /': true,
           'GET /:id': true,
+          'GET /meta': true,
         },
       }
     };
@@ -92,6 +95,7 @@ describe('routesObject function', () => {
     expect(result).toEqual(expect.objectContaining<Partial<IRoutesObject>>({
       'GET /test-table/': ['GET', '/test-table/', 'list', TestController, TestModel],
       'GET /test-table/:id': ['GET', '/test-table/:id', 'selectById', TestController, TestModel],
+      'GET /test-table/meta': ['GET', '/test-table/meta', 'meta', TestController, TestModel],
     }));
     const notKeys = [
       'POST /test-table/',
@@ -114,6 +118,7 @@ describe('routesObject function', () => {
           defaultAction: 'includes',
           'GET /': false,
           'GET /:id': false,
+          'GET /meta': false,
           'DELETE /': 'deleteWhere',
           'DELETE /:id': 'deleteWhere',
         },
@@ -131,7 +136,8 @@ describe('routesObject function', () => {
     }));
     const notKeys = [
       'GET /',
-      'GET /:id'
+      'GET /:id',
+      'GET /test-table/meta'
     ];
     notKeys.forEach(k => {
       expect(result).not.toHaveProperty(k);
@@ -153,6 +159,7 @@ describe('routesObject function', () => {
       'GET /alias-for-table/:id': ['GET', '/alias-for-table/:id', 'selectById', TestController, TestModel],
       'PATCH /alias-for-table/:id': ['PATCH', '/alias-for-table/:id', 'update', TestController, TestModel],
       'DELETE /alias-for-table/:id': ['DELETE', '/alias-for-table/:id', 'delete', TestController, TestModel],
+      'GET /alias-for-table/meta': ['GET', '/alias-for-table/meta', 'meta', TestController, TestModel],
     }));
   });
 

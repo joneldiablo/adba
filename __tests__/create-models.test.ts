@@ -40,4 +40,21 @@ describe('SQLite Database Tests', () => {
     expect(models.TestOneTableModel.jsonSchema).toEqual(jsonschema);
   });
 
+  test('columns property should convert schema', () => {
+    const { properties = {}, required = [] } = models.TestOneTableModel.jsonSchema as any;
+    const expected = require('../src/model-utilities').jsonSchemaToColumns(properties, required);
+    expect((models.TestOneTableModel as any).columns).toEqual(expected);
+  });
+
+  test('columnsFunc should modify columns', async () => {
+    const custom = await generateModels(knexInstance, {
+      columnsFunc: (table, cols) => {
+        if (table === 'test-one') {
+          cols.id.label = 'identifier';
+        }
+        return cols;
+      }
+    });
+    expect((custom.TestOneTableModel as any).columns.id.label).toBe('identifier');
+  });
 });

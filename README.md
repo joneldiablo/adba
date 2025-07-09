@@ -11,6 +11,16 @@ Generate API REST from any SQL DataBase
 - PostgreSQL
 - MSSQL
 
+## Features
+
+- Generate Objection.js models from your database using `generateModels`.
+- Build an Express router with full CRUD routes via `routesObject` and `expressRouter`.
+- `GET /` on the router lists all registered routes for quick discovery.
+- Each table additionally exposes `GET /<table>/meta` returning its JSON schema and converted `columns`.
+- Configure which tables and methods are exposed and alias table names as needed.
+- Customize generated JSON schema, relations and columns via hooks in `generateModels`.
+- Utility helpers cover status codes, data formatting, encryption/token helpers and email sending.
+
 ## TODO
 
 - test on PostgreSQL
@@ -59,6 +69,66 @@ const startServer = async () => {
 };
 
 startServer().catch(err => console.error(err));
+```
+
+## Customizing generated models
+
+`generateModels` accepts optional hooks to modify the generated metadata.
+
+```ts
+const models = await generateModels(knexInstance, {
+  squemaFixings: (table, schema) => {
+    if (table === 'users') {
+      return { extra_field: { type: 'string' } };
+    }
+  },
+  relationsFunc: (table, relations) => {
+    if (table === 'users' && models.ProfileTableModel) {
+      relations.profile = {
+        relation: Model.HasOneRelation,
+        modelClass: models.ProfileTableModel,
+        join: { from: 'users.id', to: 'profiles.user_id' }
+      };
+    }
+    return relations;
+  },
+  columnsFunc: (table, columns) => {
+    if (table === 'users') {
+      columns.created_at = { ...columns.created_at, label: 'Created' };
+    }
+    return columns;
+  }
+});
+```
+
+## Meta endpoints
+
+Each generated table also exposes `GET /<table>/meta`. This endpoint returns the
+table name, its JSON schema and a `columns` object derived from that schema. The
+metadata can be used to dynamically render a table in the UI.
+
+```json
+{
+  "success": true,
+  "error": false,
+  "status": 200,
+  "code": 0,
+  "description": "ok",
+  "data": {
+    "tableName": "my_table",
+    "jsonSchema": {
+      "type": "object"
+    },
+    "columns": {
+      "id": {
+        "name": "id",
+        "label": "id",
+        "type": "integer",
+        "required": true
+      }
+    }
+  }
+}
 ```
 
 ## Documentation
