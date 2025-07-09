@@ -311,10 +311,16 @@ export default class Controller {
    */
   public async meta(): Promise<IStatusCode> {
     const { properties = {}, required = [] } = this.Model.jsonSchema as any;
+    const columnsGetter = (this.Model as any).columns;
+    const columns =
+      typeof columnsGetter === 'function'
+        ? columnsGetter.call(this.Model)
+        : jsonSchemaToColumns(properties, required as string[]);
+
     const data = {
       tableName: this.Model.tableName,
       jsonSchema: this.Model.jsonSchema,
-      columns: jsonSchemaToColumns(properties, required as string[]),
+      columns,
     };
     return this.successMerge({ data });
   }
