@@ -20,6 +20,7 @@ Generate API REST from any SQL DataBase
 - Configure which tables and methods are exposed and alias table names as needed.
 - Customize generated JSON schema, relations and columns via hooks in `generateModels`.
 - Utility helpers cover status codes, data formatting, encryption/token helpers and email sending.
+- Create SQL dump files of your database via `dumpDatabase`.
 
 ## TODO
 
@@ -99,6 +100,17 @@ const models = await generateModels(knexInstance, {
     return columns;
   }
 });
+```
+
+## Database dump
+
+`dumpDatabase` generates two files in a directory of your choice: one with only
+the schema and another with schema plus data. It relies on the corresponding
+CLI tools (`mysqldump`, `pg_dump` or `sqlite3`) being available.
+
+```ts
+await dumpDatabase(knexInstance, './dumps');
+// => { schemaFile: './dumps/schema.sql', fullFile: './dumps/schema_data.sql' }
 ```
 
 ## Meta endpoints

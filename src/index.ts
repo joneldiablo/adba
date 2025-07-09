@@ -15,5 +15,6 @@ export * from "./generate-postgresql-models";
 export * from "./generate-sqlite-models";
 export * from "./knex-instances";
 export * from "./status-codes";
+export * from "./dump-database";
 export * from "./types";
 export * from "./model-utilities";
