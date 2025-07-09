@@ -38,7 +38,8 @@ export type IControllerMethods = 'list'
   | 'selectById'
   | 'insert'
   | 'update'
-  | 'delete';
+  | 'delete'
+  | 'meta';
 
 export type IRoutesObject = Record<string, [
   'GET' | 'POST' | 'DELETE' | 'PATCH' | 'PUT',

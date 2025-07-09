@@ -61,6 +61,36 @@ const startServer = async () => {
 startServer().catch(err => console.error(err));
 ```
 
+## Meta endpoints
+
+Each generated table also exposes `GET /<table>/meta`. This endpoint returns the
+table name, its JSON schema and a `columns` object derived from that schema. The
+metadata can be used to dynamically render a table in the UI.
+
+```json
+{
+  "success": true,
+  "error": false,
+  "status": 200,
+  "code": 0,
+  "description": "ok",
+  "data": {
+    "tableName": "my_table",
+    "jsonSchema": {
+      "type": "object"
+    },
+    "columns": {
+      "id": {
+        "name": "id",
+        "label": "id",
+        "type": "integer",
+        "required": true
+      }
+    }
+  }
+}
+```
+
 ## Documentation
 
 For a detailed description of each module and function, visit the [full documentation](https://joneldiablo.github.io/adba/modules.html) **automagically** generated with Typedoc. The documentation includes usage examples and in-depth explanations of each function.
