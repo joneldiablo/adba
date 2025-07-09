@@ -1,35 +1,39 @@
-import { Model, QueryBuilderType, JSONSchema, WhereMethod } from 'objection';
+import { Model, QueryBuilderType, JSONSchema, WhereMethod } from "objection";
 
-import type { IIds, ISearch, IStatusCode } from './types';
-import getStatusCode from './status-codes';
-import { jsonSchemaToColumns } from './model-utilities';
+import { deepMerge } from "dbl-utils";
+
+import type { IIds, ISearch, IStatusCode } from "./types";
+import getStatusCode from "./status-codes";
+import { jsonSchemaToColumns } from "./model-utilities";
 
 /**
  * @class Controller
- * 
+ *
  * @description
  * A controller class for handling database queries using Objection.js models.
  */
 export default class Controller {
-
   Model: typeof Model;
   qcolumns: string[] | undefined;
 
   /**
    * @constructor
-   * 
+   *
    * @param {typeof Model} SqliteModel - The Objection.js model.
    * @param {Object} options - Additional options for the controller.
    * @param {string[]} [options.searchIn] - Columns to search in by default.
    */
-  constructor(SqliteModel: typeof Model, options: { searchIn?: string[] } = {}) {
+  constructor(
+    SqliteModel: typeof Model,
+    options: { searchIn?: string[] } = {}
+  ) {
     this.Model = SqliteModel;
     this.qcolumns = options?.searchIn;
   }
 
   /**
    * Finds string type columns in the model's JSON schema.
-   * 
+   *
    * @param {typeof Model} ModelIn - The model to inspect. Defaults to this.Model.
    * @returns {string[]} A list of string type column names.
    */
@@ -38,7 +42,7 @@ export default class Controller {
     const stringFields = [];
     for (const key in properties) {
       const field: JSONSchema = properties[key] as JSONSchema;
-      if (field.type === 'string') {
+      if (field.type === "string") {
         stringFields.push(key);
       }
     }
@@ -47,22 +51,28 @@ export default class Controller {
 
   /**
    * Lists records based on search criteria.
-   * 
+   *
    * @param {ISearch} dataSearch - The search criteria.
    * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
    * @returns {Promise<object>} The promise of the resulting data.
    */
-  public list(dataSearch: ISearch, queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
-    const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
+  public list(
+    dataSearch: ISearch,
+    queryBuilder?: QueryBuilderType<any>
+  ): Promise<IStatusCode> {
+    const queryBuilderIn = queryBuilder
+      ? queryBuilder.clone()
+      : this.Model.query();
     queryBuilderIn.clear(true);
     const ModelInUse = queryBuilder?._modelClass || this.Model;
     const {
-      filters, orderBy = {},
+      filters,
+      orderBy = {},
       fields: rawFields,
       limit: rawLimit,
       offset: rawOffset,
       page: rawPage,
-      q
+      q,
     } = dataSearch;
     let limit: number;
     let offset: number;
@@ -71,29 +81,32 @@ export default class Controller {
     // Set pagination defaults
     if (rawLimit !== false) {
       limit = !rawLimit || rawLimit === true ? 20 : rawLimit;
-      offset = rawOffset || ((rawPage || 0) * limit) || 0;
+      offset = rawOffset || (rawPage || 0) * limit || 0;
       page = rawPage || Math.trunc(offset / limit) || 0;
     }
 
     // Columns to return
     const fields = new Set();
-    const fieldsReq = !rawFields ? [] :
-      Array.isArray(rawFields)
-        ? rawFields
-        : rawFields.split(',');
+    const fieldsReq = !rawFields
+      ? []
+      : Array.isArray(rawFields)
+      ? rawFields
+      : rawFields.split(",");
     fieldsReq.forEach((f: string) => fields.add(f.trim()));
 
     if (fields.size) {
-      fields.add(ModelInUse.tableName + '.id');
+      fields.add(ModelInUse.tableName + ".id");
       const finalFields = Array.from(fields);
       queryBuilderIn.select(finalFields);
     }
 
     // Omni search
-    if (typeof q === 'string') {
-      const tableName = ModelInUse.tableName + '.';
-      const query = q.replace(/(['\\])/g, '\\$1');
-      const columns = Array.isArray(this.qcolumns) ? [...this.qcolumns] : this.findTypeString(ModelInUse);
+    if (typeof q === "string") {
+      const tableName = ModelInUse.tableName + ".";
+      const query = q.replace(/(['\\])/g, "\\$1");
+      const columns = Array.isArray(this.qcolumns)
+        ? [...this.qcolumns]
+        : this.findTypeString(ModelInUse);
       const locateOrder = `WHEN {{column}} = '${query}' THEN 0 WHEN {{column}} LIKE '${query}%' THEN 1 WHEN {{column}} LIKE '%${query}' THEN 4`;
       const regexColumn = /\{\{column\}\}/g;
       const order: string[] = [];
@@ -101,52 +114,63 @@ export default class Controller {
 
       columns.map((column) => {
         const orderClause: [string, string, string] = [
-          column.includes('.') ? column : tableName + column,
-          'like', `%${query}%`
+          column.includes(".") ? column : tableName + column,
+          "like",
+          `%${query}%`,
         ];
         orWhereClauses.push(orderClause);
-        const orderString = locateOrder.replace(regexColumn, (column.includes('.') ? column : tableName + column));
+        const orderString = locateOrder.replace(
+          regexColumn,
+          column.includes(".") ? column : tableName + column
+        );
         order.push(orderString);
       });
 
       queryBuilderIn.where((builder: QueryBuilderType<any>) => {
-        orWhereClauses.forEach(w => builder.orWhere(...w));
+        orWhereClauses.forEach((w) => builder.orWhere(...w));
       });
 
       if (!Object.keys(orderBy).length) {
-        queryBuilderIn.orderByRaw('CASE ' + order.join(' ') + ' ELSE 3 END');
+        queryBuilderIn.orderByRaw("CASE " + order.join(" ") + " ELSE 3 END");
       }
     }
 
     const entriesOrderBy = Object.keys(orderBy);
     if (entriesOrderBy.length) {
       const [col, dir] = entriesOrderBy.pop()!;
-      if (col.includes('.')) queryBuilderIn.orderBy(col, dir);
+      if (col.includes(".")) queryBuilderIn.orderBy(col, dir);
       else queryBuilderIn.orderBy(`${ModelInUse.tableName}.${col}`, dir);
     }
 
     // Filtering by columns
-    if (typeof filters === 'object') {
+    if (typeof filters === "object") {
       queryBuilderIn.where((builder: QueryBuilderType<any>) => {
         Object.keys(filters).forEach((col) => {
-          const tableColumn = col.includes('.') ? col : ModelInUse.tableName + '.' + col;
+          const tableColumn = col.includes(".")
+            ? col
+            : ModelInUse.tableName + "." + col;
           const search = filters[col];
           if (Array.isArray(search)) {
-            const where = ModelInUse.jsonSchema
-              .properties[col].type === 'string' ||
-              search.length > 2 ? 'whereIn' : 'whereBetween';
+            const where =
+              ModelInUse.jsonSchema.properties[col].type === "string" ||
+              search.length > 2
+                ? "whereIn"
+                : "whereBetween";
             builder[where](tableColumn, search);
           } else if (ModelInUse.jsonSchema.properties[col]) {
-            if (ModelInUse.jsonSchema.properties[col].type === 'string') {
-              builder.where(tableColumn, 'like', '%' + search + '%');
-            } else if (['number', 'integer', 'float', 'decimal']
-              .includes(ModelInUse.jsonSchema.properties[col].type)) {
+            if (ModelInUse.jsonSchema.properties[col].type === "string") {
+              builder.where(tableColumn, "like", "%" + search + "%");
+            } else if (
+              ["number", "integer", "float", "decimal"].includes(
+                ModelInUse.jsonSchema.properties[col].type
+              )
+            ) {
               builder.where(tableColumn, Number(search));
             } else {
               builder.where(tableColumn, search);
             }
           } else {
-            builder.where(tableColumn, 'like', '%' + search + '%');
+            builder.where(tableColumn, "like", "%" + search + "%");
           }
         });
       });
@@ -156,21 +180,20 @@ export default class Controller {
 
     let response;
     if (!!limit!) {
-      response = queryBuilderIn.page(page!, limit)
-        .then((r: any) => ({
-          total: r.total,
-          data: r.results,
-          limit,
-          offset,
-          page
-        }));
+      response = queryBuilderIn.page(page!, limit).then((r: any) => ({
+        total: r.total,
+        data: r.results,
+        limit,
+        offset,
+        page,
+      }));
     } else {
       response = queryBuilderIn.then((data: object[]) => ({
         total: data.length,
         data,
         limit,
         offset: offset || 0,
-        page
+        page,
       }));
     }
 
@@ -185,8 +208,13 @@ export default class Controller {
    * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
    * @returns {Promise<object>} The promise of the resulting data.
    */
-  public selectById({ id }: IIds, queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
-    const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
+  public selectById(
+    { id }: IIds,
+    queryBuilder?: QueryBuilderType<any>
+  ): Promise<IStatusCode> {
+    const queryBuilderIn = queryBuilder
+      ? queryBuilder.clone()
+      : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.findById(id);
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
@@ -204,8 +232,13 @@ export default class Controller {
    * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
    * @returns {Promise<object>} The promise of the resulting data.
    */
-  public selectOneActive(find: object, queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
-    const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
+  public selectOneActive(
+    find: object,
+    queryBuilder?: QueryBuilderType<any>
+  ): Promise<IStatusCode> {
+    const queryBuilderIn = queryBuilder
+      ? queryBuilder.clone()
+      : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.findOne({ ...find, active: true });
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
@@ -223,8 +256,13 @@ export default class Controller {
    * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
    * @returns {Promise<object>} The promise of the resulting data.
    */
-  public selectOne(find: object, queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
-    const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
+  public selectOne(
+    find: object,
+    queryBuilder?: QueryBuilderType<any>
+  ): Promise<IStatusCode> {
+    const queryBuilderIn = queryBuilder
+      ? queryBuilder.clone()
+      : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.findOne(find);
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
@@ -238,13 +276,18 @@ export default class Controller {
 
   /**
    * Inserts one or multiple records.
-   * 
+   *
    * @param {object | object[]} data - The data to insert.
    * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
    * @returns {Promise<object>} The promise of the resulting data.
    */
-  public insert(data: object | object[], queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
-    const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
+  public insert(
+    data: object | object[],
+    queryBuilder?: QueryBuilderType<any>
+  ): Promise<IStatusCode> {
+    const queryBuilderIn = queryBuilder
+      ? queryBuilder.clone()
+      : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.insertGraph(data, { allowRefs: true });
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
@@ -255,13 +298,18 @@ export default class Controller {
 
   /**
    * Updates records using an upsert operation.
-   * 
+   *
    * @param {object | object[]} data - The data for upsert.
    * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
    * @returns {Promise<object>} The promise of the resulting data.
    */
-  public update(data: object | object[], queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
-    const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
+  public update(
+    data: object | object[],
+    queryBuilder?: QueryBuilderType<any>
+  ): Promise<IStatusCode> {
+    const queryBuilderIn = queryBuilder
+      ? queryBuilder.clone()
+      : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.upsertGraph(data, { allowRefs: true });
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
@@ -272,13 +320,18 @@ export default class Controller {
 
   /**
    * Deletes records based on where clause.
-   * 
+   *
    * @param {WhereMethod<any>} whereData - Criteria for delete operation.
    * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
    * @returns {Promise<object>} The promise of the resulting data.
    */
-  public deleteWhere(whereData: WhereMethod<any>, queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
-    const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
+  public deleteWhere(
+    whereData: WhereMethod<any>,
+    queryBuilder?: QueryBuilderType<any>
+  ): Promise<IStatusCode> {
+    const queryBuilderIn = queryBuilder
+      ? queryBuilder.clone()
+      : this.Model.query();
     queryBuilderIn.clear(true);
     queryBuilderIn.delete().where(whereData);
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
@@ -289,15 +342,20 @@ export default class Controller {
 
   /**
    * Deletes records by ID(s).
-   * 
+   *
    * @param {IIds} param0 - The ID or IDs of records to delete.
    * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
    * @returns {Promise<object>} The promise of the resulting data.
    */
-  public delete({ id, ids }: IIds, queryBuilder?: QueryBuilderType<any>): Promise<IStatusCode> {
-    const queryBuilderIn = queryBuilder ? queryBuilder.clone() : this.Model.query();
+  public delete(
+    { id, ids }: IIds,
+    queryBuilder?: QueryBuilderType<any>
+  ): Promise<IStatusCode> {
+    const queryBuilderIn = queryBuilder
+      ? queryBuilder.clone()
+      : this.Model.query();
     queryBuilderIn.clear(true);
-    queryBuilderIn.delete().whereIn('id', [id, ids].flat().filter(Boolean));
+    queryBuilderIn.delete().whereIn("id", [id, ids].flat().filter(Boolean));
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
     return queryBuilderIn
       .then((resp: any) => this.success(resp))
@@ -311,23 +369,23 @@ export default class Controller {
    */
   public async meta(): Promise<IStatusCode> {
     const { properties = {}, required = [] } = this.Model.jsonSchema as any;
+
     const columnsGetter = (this.Model as any).columns;
-    const columns =
-      typeof columnsGetter === 'function'
-        ? columnsGetter.call(this.Model)
-        : jsonSchemaToColumns(properties, required as string[]);
+    let columns = jsonSchemaToColumns(properties, required as string[]);
+    if (typeof columnsGetter === "function")
+      columns = deepMerge(columns, columnsGetter.call(this.Model) || {});
 
     const data = {
       tableName: this.Model.tableName,
       jsonSchema: this.Model.jsonSchema,
       columns,
     };
-    return this.successMerge({ data });
+    return this.success(data);
   }
 
   /**
    * Formats a successful response object.
-   * 
+   *
    * @param {any} data - The data to return in the response.
    * @param {number} [status=200] - The HTTP status code.
    * @param {number} [code=0] - Additional status code.
@@ -344,7 +402,7 @@ export default class Controller {
 
   /**
    * Merges additional data into a successful response object.
-   * 
+   *
    * @param {any} data - The data to return in the response.
    * @param {number} [status=200] - The HTTP status code.
    * @param {number} [code=0] - Additional status code.
@@ -361,7 +419,7 @@ export default class Controller {
 
   /**
    * Formats an error response object.
-   * 
+   *
    * @param {any} errorObj - The error object or message.
    * @param {number} [status=500] - The HTTP status code.
    * @param {number} [code=0] - Additional status code.
@@ -372,7 +430,7 @@ export default class Controller {
     if (errorObj instanceof Error) {
       console.error(errorObj);
       toReturn = Object.assign(
-        { error: true, success: false, },
+        { error: true, success: false },
         getStatusCode(500, 0),
         { data: errorObj.message }
       ) as IStatusCode;
