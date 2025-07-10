@@ -77,6 +77,17 @@ async function setupDatabase() {
       decimal_column: 75.25,
       string_column: 'Sample String 2',
       blob_column: Buffer.from('Sample Blob 2'),
+    },
+    {
+      id: 3,
+      integer_column: 3,
+      text_column: 'Text Example 3',
+      real_column: 34.56,
+      boolean_column: false,
+      datetime_column: moment().format('YYYY-MM-DD HH:mm:ss'),
+      decimal_column: 75.25,
+      string_column: 'Sample String 3',
+      blob_column: Buffer.from('Sample Blob 3'),
     }
   ]);
 
