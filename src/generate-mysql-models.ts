@@ -1,10 +1,14 @@
-import { Model, RelationMappings, JSONSchema } from 'objection';
-import { Knex } from 'knex';
+import { Model, RelationMappings, JSONSchema } from "objection";
+import { Knex } from "knex";
 
-import { deepMerge } from 'dbl-utils';
+import { deepMerge } from "dbl-utils";
 
-import { className, jsonSchemaToColumns, ITableColumn } from './model-utilities';
-import { IGenerateModelsOptions } from './types';
+import {
+  className,
+  jsonSchemaToColumns,
+  ITableColumn,
+} from "./model-utilities";
+import { IGenerateModelsOptions } from "./types";
 
 /**
  * Generates MySQL models dynamically based on database structures.
@@ -17,31 +21,46 @@ export async function generateMySQLModels(
   opts: IGenerateModelsOptions = {}
 ): Promise<Record<string, typeof Model>> {
   const models: Record<string, typeof Model> = {};
-  const { relationsFunc, squemaFixings, columnsFunc, parseFunc, formatFunc } = opts;
+  const { relationsFunc, squemaFixings, columnsFunc, parseFunc, formatFunc } =
+    opts;
 
   try {
     // Query table and view structures from the database
     const [tables, views] = await Promise.all([
-      knexInstance('information_schema.tables')
-        .where('table_schema', knexInstance.client.config.connection.database)
-        .select('table_name AS name', knexInstance.raw(`'table' as type`)),
-      knexInstance('information_schema.views')
-        .where('table_schema', knexInstance.client.config.connection.database)
-        .select('table_name AS name', knexInstance.raw(`'view' as type`))
+      knexInstance("information_schema.tables")
+        .where("table_schema", knexInstance.client.config.connection.database)
+        .select("table_name AS name", knexInstance.raw(`'table' as type`)),
+      knexInstance("information_schema.views")
+        .where("table_schema", knexInstance.client.config.connection.database)
+        .select("table_name AS name", knexInstance.raw(`'view' as type`)),
     ]);
     const structures = [...tables, ...views];
 
     for (const { name: structureName, type } of structures) {
-      const columns = await knexInstance('information_schema.columns')
-        .where('table_schema', knexInstance.client.config.connection.database)
-        .andWhere('table_name', structureName)
-        .select('column_name', 'data_type', 'is_nullable', 'column_comment', 'column_key');
+      const columns = await knexInstance("information_schema.columns")
+        .where("table_schema", knexInstance.client.config.connection.database)
+        .andWhere("table_name", structureName)
+        .select(
+          "column_name",
+          "data_type",
+          "is_nullable",
+          "column_comment",
+          "column_key",
+          "column_default",
+          "extra"
+        );
 
-      const foreignKeys = await knexInstance('information_schema.key_column_usage')
-        .where('table_schema', knexInstance.client.config.connection.database)
-        .andWhere('table_name', structureName)
-        .andWhereNot('referenced_table_name', null)
-        .select('column_name AS from', 'referenced_table_name AS table', 'referenced_column_name AS to');
+      const foreignKeys = await knexInstance(
+        "information_schema.key_column_usage"
+      )
+        .where("table_schema", knexInstance.client.config.connection.database)
+        .andWhere("table_name", structureName)
+        .andWhereNot("referenced_table_name", null)
+        .select(
+          "column_name AS from",
+          "referenced_table_name AS table",
+          "referenced_column_name AS to"
+        );
 
       // Define a dynamic model class
       const DynamicModel = class extends Model {
@@ -61,33 +80,45 @@ export async function generateMySQLModels(
           const schemaProperties: Record<string, JSONSchema> = {};
 
           for (const column of columns) {
-            const format = mapMySqlTypeToJsonFormat(column.data_type, column.column_name);
+            const format = mapMySqlTypeToJsonFormat(
+              column.data_type,
+              column.column_name
+            );
             const type = mapMySqlTypeToJsonType(column.data_type);
             const property: JSONSchema = {
-              type: type !== 'buffer' ? type : undefined,
-              description: column.column_comment || undefined
+              type: type !== "buffer" ? type : undefined,
+              description: column.column_comment || undefined,
             };
 
-            if (column.is_nullable === 'NO') {
+            const isNotNullable = column.is_nullable === "NO";
+            const isAutoIncrement = column.extra
+              ?.toLowerCase()
+              .includes("auto_increment");
+            const hasDefault = column.column_default !== null;
+
+            if (isNotNullable && !isAutoIncrement && !hasDefault) {
               requiredFields.push(column.column_name);
             }
 
-            if (/^(INT|INTEGER|REAL)$/i.test(column.data_type) && column.column_key !== 'PRI') {
+            if (
+              /^(INT|INTEGER|REAL)$/i.test(column.data_type) &&
+              column.column_key !== "PRI"
+            ) {
               property.minimum = 0;
             }
 
-            property.$comment = [type, format].filter(Boolean).join('.');
-            const prefix = type === 'buffer' ? 'x-' : '';
+            property.$comment = [type, format].filter(Boolean).join(".");
+            const prefix = type === "buffer" ? "x-" : "";
             schemaProperties[prefix + column.column_name] = property;
           }
 
-          if (typeof squemaFixings === 'function') {
+          if (typeof squemaFixings === "function") {
             const r = squemaFixings(structureName, schemaProperties);
             if (r) deepMerge(schemaProperties, r);
           }
 
           return {
-            type: 'object',
+            type: "object",
             properties: schemaProperties,
             required: requiredFields.length ? requiredFields : undefined,
           };
@@ -101,9 +132,13 @@ export async function generateMySQLModels(
           const relations: RelationMappings = {};
 
           for (const fk of foreignKeys) {
-            const relatedModel = Object.values(models).find((Model) => Model.tableName === fk.table);
+            const relatedModel = Object.values(models).find(
+              (Model) => Model.tableName === fk.table
+            );
             if (!relatedModel) {
-              throw new Error(`${structureName}: Model for table ${fk.table} not found`);
+              throw new Error(
+                `${structureName}: Model for table ${fk.table} not found`
+              );
             }
             relations[`${fk.table}`] = {
               relation: Model.BelongsToOneRelation,
@@ -115,7 +150,7 @@ export async function generateMySQLModels(
             };
           }
 
-          if (typeof relationsFunc === 'function') {
+          if (typeof relationsFunc === "function") {
             const r = relationsFunc(structureName, relations);
             if (r) Object.assign(relations, r);
           }
@@ -129,7 +164,7 @@ export async function generateMySQLModels(
         static get columns(): Record<string, ITableColumn> {
           const { properties = {}, required = [] } = this.jsonSchema as any;
           const cols = jsonSchemaToColumns(properties, required as string[]);
-          if (typeof columnsFunc === 'function') {
+          if (typeof columnsFunc === "function") {
             const r = columnsFunc(structureName, cols);
             if (r) deepMerge(cols, r);
           }
@@ -143,7 +178,9 @@ export async function generateMySQLModels(
          */
         $parseDatabaseJson(json: any) {
           json = super.$parseDatabaseJson(json);
-          return typeof parseFunc === 'function' ? parseFunc(structureName, json) : json;
+          return typeof parseFunc === "function"
+            ? parseFunc(structureName, json)
+            : json;
         }
 
         /**
@@ -153,21 +190,23 @@ export async function generateMySQLModels(
          */
         $formatDatabaseJson(json: any) {
           json = super.$formatDatabaseJson(json);
-          return typeof formatFunc === 'function' ? formatFunc(structureName, json) : json;
+          return typeof formatFunc === "function"
+            ? formatFunc(structureName, json)
+            : json;
         }
       };
 
       const pascalCaseName = className(structureName);
-      const suffix = type === 'table' ? 'Table' : 'View';
+      const suffix = type === "table" ? "Table" : "View";
       const modelName = `${pascalCaseName}${suffix}Model`;
 
-      Object.defineProperty(DynamicModel, 'name', { value: modelName });
+      Object.defineProperty(DynamicModel, "name", { value: modelName });
       DynamicModel.knex(knexInstance);
 
       models[modelName] = DynamicModel;
     }
   } catch (err) {
-    console.error('Error generating models:', err);
+    console.error("Error generating models:", err);
   }
 
   return models;
@@ -181,29 +220,29 @@ export async function generateMySQLModels(
 export function mapMySqlTypeToJsonType(mysqlType: string): string {
   const baseType = mysqlType.toUpperCase();
   const typeMap: Record<string, string> = {
-    BOOLEAN: 'boolean',
-    BINARY: 'buffer',
-    BLOB: 'buffer',
-    BIGINT: 'integer',
-    INT: 'integer',
-    INTEGER: 'integer',
-    MEDIUMINT: 'integer',
-    SMALLINT: 'integer',
-    TINYINT: 'integer',
-    DECIMAL: 'number',
-    DOUBLE: 'number',
-    FLOAT: 'number',
-    NUMERIC: 'number',
-    REAL: 'number',
-    CHAR: 'string',
-    VARCHAR: 'string',
-    TEXT: 'string',
-    DATE: 'string',
-    DATETIME: 'string',
-    TIMESTAMP: 'string',
-    TIME: 'string',
+    BOOLEAN: "boolean",
+    BINARY: "buffer",
+    BLOB: "buffer",
+    BIGINT: "integer",
+    INT: "integer",
+    INTEGER: "integer",
+    MEDIUMINT: "integer",
+    SMALLINT: "integer",
+    TINYINT: "integer",
+    DECIMAL: "number",
+    DOUBLE: "number",
+    FLOAT: "number",
+    NUMERIC: "number",
+    REAL: "number",
+    CHAR: "string",
+    VARCHAR: "string",
+    TEXT: "string",
+    DATE: "string",
+    DATETIME: "string",
+    TIMESTAMP: "string",
+    TIME: "string",
   };
-  return typeMap[baseType] || 'string';
+  return typeMap[baseType] || "string";
 }
 
 /**
@@ -212,14 +251,16 @@ export function mapMySqlTypeToJsonType(mysqlType: string): string {
  * @param colName - The column name for potential additional format inference.
  * @returns The JSON Schema format if applicable.
  */
-export function mapMySqlTypeToJsonFormat(mysqlType: string, colName: string): string | undefined {
+export function mapMySqlTypeToJsonFormat(
+  mysqlType: string,
+  colName: string
+): string | undefined {
   const baseType = mysqlType.toUpperCase();
   const typeMap: Record<string, string> = {
-    DATE: 'date',
-    DATETIME: 'datetime',
-    TIMESTAMP: 'datetime',
-    TIME: 'time',
+    DATE: "date",
+    DATETIME: "datetime",
+    TIMESTAMP: "datetime",
+    TIME: "time",
   };
   return typeMap[baseType] || undefined;
 }
-
