@@ -81,8 +81,11 @@ export interface IFilterConf
   extends IBaseConfFilters,
     Record<string, string | boolean | IRouteConf> {}
 
+export type ICustomEndpoints = Record<string, Record<string, string>>;
+
 export type IExpressRouterConf = {
   filters?: IFilterConf;
+  customEndpoints?: ICustomEndpoints;
 };
 
 export type ISearch = {
