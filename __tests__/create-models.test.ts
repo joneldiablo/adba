@@ -34,8 +34,7 @@ describe('SQLite Database Tests', () => {
         decimal_column: { type: 'number', $comment: 'number' },
         string_column: { type: 'string', $comment: 'string', maxLength: 255 },
         'x-blob_column': { $comment: 'buffer' },
-      },
-      required: ['id']
+      }
     }
     expect(models.TestOneTableModel.jsonSchema).toEqual(jsonschema);
   });
