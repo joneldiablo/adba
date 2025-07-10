@@ -1,6 +1,6 @@
 {
   "name": "adba",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "Any DataBase to API",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -13,6 +13,12 @@
       "types": "./dist/types/index.d.ts",
       "source": "./src/index.ts"
     },
+    "./cli": {
+      "import": "./dist/esm/cli.js",
+      "require": "./dist/cjs/cli.js",
+      "types": "./dist/types/cli.d.ts",
+      "source": "./src/cli.ts"
+    },
     "./controller": {
       "import": "./dist/esm/controller.js",
       "require": "./dist/cjs/controller.js",
@@ -24,6 +30,12 @@
       "require": "./dist/cjs/crypt.js",
       "types": "./dist/types/crypt.d.ts",
       "source": "./src/crypt.ts"
+    },
+    "./dump-database": {
+      "import": "./dist/esm/dump-database.js",
+      "require": "./dist/cjs/dump-database.js",
+      "types": "./dist/types/dump-database.d.ts",
+      "source": "./src/dump-database.ts"
     },
     "./email": {
       "import": "./dist/esm/email.js",
@@ -96,12 +108,6 @@
       "require": "./dist/cjs/status-codes.js",
       "types": "./dist/types/status-codes.d.ts",
       "source": "./src/status-codes.ts"
-    },
-    "./dump-database": {
-      "import": "./dist/esm/dump-database.js",
-      "require": "./dist/cjs/dump-database.js",
-      "types": "./dist/types/dump-database.d.ts",
-      "source": "./src/dump-database.ts"
     },
     "./types": {
       "import": "./dist/esm/types.js",
