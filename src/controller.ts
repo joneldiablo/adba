@@ -277,19 +277,19 @@ export default class Controller {
   /**
    * Inserts one or multiple records.
    *
-   * @param {object | object[]} data - The data to insert.
+   * @param {Record<string, any>} data - The data to insert.
    * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
    * @returns {Promise<object>} The promise of the resulting data.
    */
   public insert(
-    data: object | object[],
+    data: Record<string, any>,
     queryBuilder?: QueryBuilderType<any>
   ): Promise<IStatusCode> {
     const queryBuilderIn = queryBuilder
       ? queryBuilder.clone()
       : this.Model.query();
     queryBuilderIn.clear(true);
-    queryBuilderIn.insertGraph(data, { allowRefs: true });
+    queryBuilderIn.insertGraph(data.insert, { allowRefs: true });
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
     return queryBuilderIn
       .then((resp: any) => this.success(resp))
@@ -299,19 +299,19 @@ export default class Controller {
   /**
    * Updates records using an upsert operation.
    *
-   * @param {object | object[]} data - The data for upsert.
+   * @param {Record<string, any>} data - The data for upsert.
    * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
    * @returns {Promise<object>} The promise of the resulting data.
    */
   public update(
-    data: object | object[],
+    data: Record<string, any>,
     queryBuilder?: QueryBuilderType<any>
   ): Promise<IStatusCode> {
     const queryBuilderIn = queryBuilder
       ? queryBuilder.clone()
       : this.Model.query();
     queryBuilderIn.clear(true);
-    queryBuilderIn.upsertGraph(data, { allowRefs: true });
+    queryBuilderIn.upsertGraph(data.update, { allowRefs: true });
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
     return queryBuilderIn
       .then((resp: any) => this.success(resp))
