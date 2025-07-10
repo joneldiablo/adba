@@ -163,4 +163,22 @@ describe('routesObject function', () => {
     }));
   });
 
+  it('should include custom endpoints', () => {
+    const cfg: IExpressRouterConf = {
+      customEndpoints: {
+        custom: {
+          'GET /': 'testController.customAction',
+          'PUT /:id': 'testController.updateAction'
+        }
+      }
+    };
+
+    const result: IRoutesObject = routesObject(models, mockControllers, cfg);
+
+    expect(result).toEqual(expect.objectContaining<Partial<IRoutesObject>>({
+      'GET /custom/': ['GET', '/custom/', 'customAction', TestController, Model],
+      'PUT /custom/:id': ['PUT', '/custom/:id', 'updateAction', TestController, Model]
+    }));
+  });
+
 });

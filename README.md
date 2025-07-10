@@ -18,6 +18,7 @@ Generate API REST from any SQL DataBase
 - `GET /` on the router lists all registered routes for quick discovery.
 - Each table additionally exposes `GET /<table>/meta` returning its JSON schema and converted `columns`.
 - Configure which tables and methods are exposed and alias table names as needed.
+- Add custom endpoints through the `customEndpoints` option passed to `routesObject`.
 - Customize generated JSON schema, relations and columns via hooks in `generateModels`.
 - Utility helpers cover status codes, data formatting, encryption/token helpers and email sending.
 - Create SQL dump files of your database via `dumpDatabase`.
@@ -71,6 +72,23 @@ const startServer = async () => {
 
 startServer().catch(err => console.error(err));
 ```
+
+## Adding custom endpoints
+
+`routesObject` accepts a `customEndpoints` option where you can define arbitrary routes bound to your controllers. The object keys are base paths and each contains HTTP method/path strings mapped to `ControllerName.action`.
+
+```ts
+const customRoutes = routesObject(models, controllers, {
+  customEndpoints: {
+    custom: {
+      'GET /': 'testController.customAction',
+      'PUT /:id': 'testController.updateAction'
+    }
+  }
+});
+```
+
+The above configuration generates `/custom/` and `/custom/:id` endpoints and they will appear in the root route list like any other service.
 
 ## Customizing generated models
 

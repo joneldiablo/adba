@@ -19,6 +19,7 @@ import type {
   IRoutesObject,
   IStatusCode,
   IRouterMethods,
+  ICustomEndpoints,
 } from "./types";
 import GenericController from "./controller";
 import Controller from "./controller";
@@ -219,6 +220,29 @@ export function routesObject(
   } else {
     Object.values(models).forEach((TheModel) => {
       prepareRoutesObj(routesObj, TheModel, controllers, true);
+    });
+  }
+
+  if (config.customEndpoints) {
+    Object.entries(config.customEndpoints).forEach(([basePath, endpoints]) => {
+      const cleanBase = basePath.replace(/^\/+|\/+$/g, "");
+      Object.entries(endpoints as Record<string, string>).forEach(
+        ([service, handler]) => {
+          const [controllerName, action] = handler.split(".");
+          const TheController = controllers[controllerName];
+          if (!TheController) return;
+          const [m, p] = service.split(" ");
+          const method = m.toUpperCase() as IRoutesObject[1][0];
+          const servicePath = `/${cleanBase}${p}`;
+          routesObj[`${method} ${servicePath}`] = [
+            method,
+            servicePath,
+            action,
+            TheController,
+            Model,
+          ];
+        }
+      );
     });
   }
   return routesObj;
