@@ -36,10 +36,11 @@ const definedREST: Record<string, string> = {
   "PUT /": "insert",
   "PATCH /": "update",
   "DELETE /": "delete",
-  "GET /:id": "selectById",
-  "PATCH /:id": "update",
-  "DELETE /:id": "delete",
   "GET /meta": "meta",
+  //wildcards
+  "GET /:id(\\d+)": "selectById",
+  "PATCH /:id(\\d+)": "update",
+  "DELETE /:id(\\d+)": "delete",
 };
 
 /**
