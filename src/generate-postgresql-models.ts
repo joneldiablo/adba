@@ -30,7 +30,7 @@ export async function generatePostgreSQLModels(
       const columns = await knexInstance('information_schema.columns')
         .where('table_schema', 'public')
         .andWhere('table_name', structureName)
-        .select('column_name', 'data_type', 'is_nullable', 'column_default');
+        .select('column_name', 'data_type', 'is_nullable', 'column_default', 'is_identity');
 
       const foreignKeys = await knexInstance.raw(`
         SELECT
@@ -80,7 +80,11 @@ export async function generatePostgreSQLModels(
               type: type !== 'buffer' ? type : undefined
             };
 
-            if (column.is_nullable === 'NO' && !column.column_default) {
+            const isNotNullable = column.is_nullable === 'NO';
+            const isIdentity = column.is_identity === 'YES';
+            const hasDefault = column.column_default != null;
+
+            if (isNotNullable && !isIdentity && !hasDefault) {
               requiredFields.push(column.column_name);
             }
 

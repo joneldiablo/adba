@@ -54,7 +54,11 @@ export async function generateSQLiteModels(
               type: type !== 'buffer' ? type : undefined
             };
 
-            if (column.notnull && !column.dflt_value) {
+            const isNotNullable = !!column.notnull;
+            const isAutoIncrement = column.pk && /INT/i.test(column.type);
+            const hasDefault = column.dflt_value !== null && column.dflt_value !== undefined;
+
+            if (isNotNullable && !isAutoIncrement && !hasDefault) {
               requiredFields.push(column.name);
             }
             if (column.comment) {

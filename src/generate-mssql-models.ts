@@ -28,9 +28,14 @@ export async function generateMSSQLModels(
 
     for (const { name: structureName, type } of structures) {
       const columns = await knexInstance.raw(`
-        SELECT COLUMN_NAME as column_name, DATA_TYPE as data_type, IS_NULLABLE as is_nullable, COLUMN_DEFAULT as column_default
-        FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_NAME = ?
+        SELECT
+          c.COLUMN_NAME as column_name,
+          c.DATA_TYPE as data_type,
+          c.IS_NULLABLE as is_nullable,
+          c.COLUMN_DEFAULT as column_default,
+          COLUMNPROPERTY(object_id(c.TABLE_SCHEMA + '.' + c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') AS is_identity
+        FROM INFORMATION_SCHEMA.COLUMNS c
+        WHERE c.TABLE_NAME = ?
       `, [structureName]).then(res => res.recordset);
 
       const foreignKeys = await knexInstance.raw(`
@@ -72,7 +77,11 @@ export async function generateMSSQLModels(
               type: type !== 'buffer' ? type : undefined
             };
 
-            if (column.is_nullable === 'NO' && !column.column_default) {
+            const isNotNullable = column.is_nullable === 'NO';
+            const isIdentity = column.is_identity === 1;
+            const hasDefault = column.column_default != null;
+
+            if (isNotNullable && !isIdentity && !hasDefault) {
               requiredFields.push(column.column_name);
             }
 
