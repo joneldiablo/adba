@@ -9,6 +9,13 @@ import * as pkg from './index';
 
 const cli = yargs(hideBin(process.argv));
 
+/**
+ * Parse a CLI argument. If the argument is a path to a JSON file, the file is
+ * loaded and JSON references are resolved. Otherwise the raw value is returned.
+ *
+ * @param value - Raw argument value.
+ * @returns Parsed value.
+ */
 function parseInput(value: string): any {
   if (typeof value !== 'string') return value;
   let content = value;
@@ -39,7 +46,7 @@ for (const name of Object.keys(pkg)) {
   } else {
     cli.command(
       name + ' [args..]',
-      `Ejecuta la función ${name}`,
+      `Run the function ${name}`,
       y => y.positional('args', { type: 'string', array: true }),
       async argv => {
         const raw = (argv.args || []) as any[];
