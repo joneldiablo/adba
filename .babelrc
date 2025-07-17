@@ -3,7 +3,7 @@
     "@babel/preset-env",
     {
       "targets": {
-        "node": "current" // Asegúrate de apuntar a la versión node que estás usando
+        "node": "current"
       }
     }
   ]

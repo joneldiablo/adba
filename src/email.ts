@@ -163,10 +163,10 @@ export const enqueueEmailList = async (transportConf: Partial<Transporter>) => {
       const transporter = nodemailer.createTransport(transportConf);
       transporter.verify((error, success) => {
         if (error) {
-          console.error('Error al conectar con el servidor SMTP:', error);
+          console.error('Error connecting to the SMTP server:', error);
           reject(error);
         } else {
-          console.log('Servidor está listo para enviar correos:', success);
+          console.log('Server is ready to send emails:', success);
           resolve(transporter);
         }
       });

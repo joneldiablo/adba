@@ -3,7 +3,18 @@ import jwt from "jsonwebtoken";
 import bcrypt from 'bcrypt';
 import useragent from 'useragent';
 
-
+/**
+ * Encrypt a string using AES-256-CBC.
+ *
+ * @param text - Plain text to encrypt.
+ * @param password - Password used for key derivation.
+ * @param ivString - Initialization vector in hex format.
+ * @returns Object containing encrypted data and IV.
+ *
+ * @example
+ * const { encryptedData, iv } = encrypt('hello', 'pass', '');
+ * const plain = decrypt(encryptedData, 'pass', iv);
+ */
 export function encrypt(text: string, password: string, ivString: string) {
   const iv = ivString ? Buffer.from(ivString, 'hex') : crypto.randomBytes(16);
   const key = crypto.scryptSync(password, 'salt', 32);
@@ -13,6 +24,14 @@ export function encrypt(text: string, password: string, ivString: string) {
   return { encryptedData: encrypted, iv: iv.toString('hex') };
 }
 
+/**
+ * Decrypt data encrypted with {@link encrypt}.
+ *
+ * @param encryptedData - The hexadecimal encrypted string.
+ * @param password - Password used for key derivation.
+ * @param ivString - Initialization vector in hex format.
+ * @returns The decrypted plain text.
+ */
 export function decrypt(encryptedData: string, password: string, ivString: string) {
   const key = crypto.scryptSync(password, 'salt', 32);
   const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivString, 'hex'));
@@ -24,7 +43,12 @@ export function decrypt(encryptedData: string, password: string, ivString: strin
 
 /**
  * Generates a unique 6-digit code.
- * @returns {string} A 6-digit unique code.
+ *
+ * @returns A 6-digit code as string.
+ *
+ * @example
+ * const code = generateCode();
+ * console.log(code); // "482901"
  */
 export function generateCode() {
   const bytes = crypto.randomBytes(4);
@@ -46,13 +70,16 @@ const generateKeyFromInput = (input: string) => {
 };
 
 /**
- * Build a secure token
- * 
- * @param {Object} data - The payload data
- * @param {string} pass - The encryption key
- * @param {string} ivString - ivString
- * @param {number|string} expiresIn - The expiration time for the token
- * @returns {string} - Returns the URL-safe encrypted token
+ * Build a secure token that contains encrypted data.
+ *
+ * @param data - Payload to include in the token.
+ * @param pass - Encryption key.
+ * @param ivString - Initialization vector in hex format.
+ * @param expiresIn - Expiration time for the JWT.
+ * @returns URL-safe encrypted token string.
+ *
+ * @example
+ * const token = buildToken({ payload: { foo: 'bar' } }, 'pass', iv, '1h');
  */
 export const buildToken = (data: { payload: any }, pass: string, ivString: string, expiresIn: string) => {
   // Encrypt the JSON content
@@ -69,11 +96,12 @@ export const buildToken = (data: { payload: any }, pass: string, ivString: strin
 }
 
 /**
- * Decrypt a secure token to get the payload data
- * @param {string} encryptedToken - The encrypted token
- * @param {string} pass - The decryption key
- * @param {string} ivString - ivString
- * @returns {Object|null} - Returns the decrypted payload data, or null if decryption fails
+ * Decrypt a token created with {@link buildToken}.
+ *
+ * @param encryptedToken - The encrypted token.
+ * @param pass - Decryption key.
+ * @param ivString - Initialization vector in hex format.
+ * @returns The decrypted payload or an Error instance.
  */
 export const readToken = (encryptedToken: string, pass: string, ivString: string) => {
   try {
@@ -102,6 +130,15 @@ export const readToken = (encryptedToken: string, pass: string, ivString: string
   }
 };
 
+/**
+ * Generate a bcrypt hash from a plain password.
+ *
+ * @param password - Password to hash.
+ * @returns The hashed password or an Error.
+ *
+ * @example
+ * const hash = await generatePasswordHash('secret');
+ */
 export async function generatePasswordHash(password: string) {
   try {
     const saltRounds = 10;
@@ -112,6 +149,13 @@ export async function generatePasswordHash(password: string) {
   }
 }
 
+/**
+ * Verify a password against a bcrypt hash.
+ *
+ * @param password - Plain password to verify.
+ * @param hash - Previously generated hash.
+ * @returns True if the password matches, otherwise false or an Error.
+ */
 export async function verifyPasswordHash(password: string, hash: string) {
   try {
     const isMatch = await bcrypt.compare(password, hash);
@@ -121,6 +165,13 @@ export async function verifyPasswordHash(password: string, hash: string) {
   }
 }
 
+/**
+ * Determine the client family from a user-agent string.
+ *
+ * @param userAgent - Raw user-agent header string.
+ * @param device - Optional device hint.
+ * @returns The detected client family (e.g. 'Chrome').
+ */
 export function getClientType(userAgent: string, device?: string) {
   const agent = useragent.parse(userAgent);
   return agent.family;
