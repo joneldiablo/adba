@@ -130,6 +130,21 @@ CLI tools (`mysqldump`, `pg_dump` or `sqlite3`) being available.
 await dumpDatabase(knexInstance, './dumps');
 // => { schemaFile: './dumps/schema.sql', fullFile: './dumps/schema_data.sql' }
 ```
+## Data formatting
+
+Use `formatData` to transform objects based on simple rules. Add custom rule handlers with `addRuleActions`.
+
+```ts
+import { formatData, addRuleActions } from "adba";
+
+addRuleActions({
+  ":upper": (v) => String(v).toUpperCase(),
+});
+
+const res = formatData({ name: "john", age: 30 }, { name: ["string", ":upper"], age: "number" });
+// res => { name: "JOHN", age: 30 }
+```
+
 
 ## Meta endpoints
 
