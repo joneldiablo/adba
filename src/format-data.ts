@@ -1,14 +1,21 @@
+/**
+ * Utility helpers to transform plain objects based on declarative rules.
+ * Register custom rule handlers using {@link addRuleActions} and apply them via {@link formatData}.
+ */
 import moment from 'moment';
 import type { IExtraRules, IRuleAction, IRuleArray, IRules } from './types';
 
-/** 
- * Stores additional custom rules that can be added dynamically 
+/**
+ * Registry of user-provided rule handlers keyed by rule name.
+ * Populated via {@link addRuleActions}.
  */
 const extraRules: IExtraRules = {};
 
 /**
  * Adds more rule actions to the `extraRules` object.
  * @param moreRules - An object containing rules to be added.
+ * @example
+ * addRuleActions({ ':upper': (v) => String(v).toUpperCase() })
  */
 export function addRuleActions(moreRules: IExtraRules) {
   // Merge existing rules with new ones
@@ -63,6 +70,9 @@ function ruleActionReplace(ruleIn: boolean | IRuleAction, value: any, defaultFun
  * @param data - The object where keys are field names and values are the data to format.
  * @param rules - The object containing rules to use for formatting.
  * @returns Returns a new object with formatted values.
+ * @example
+ * const result = formatData({ name: 'john' }, { name: ['string', ':upper'] })
+ * // => { name: 'JOHN' }
  */
 export default function formatData(data: { [key: string]: any }, rules: IRules) {
   const toReturn = Object.entries(data).reduce((r: { [key: string]: any }, [key, value]) => {
