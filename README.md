@@ -27,6 +27,8 @@ Generate API REST from any SQL DataBase
 
 - test on PostgreSQL
 - test on MSSQL
+- [ ] Implement integration tests for PostgreSQL database (see postgres-connection.test.ts)
+- [ ] Implement integration tests for MSSQL database (see mssql-connection.test.ts)
 
 ## Example
 
