@@ -135,12 +135,7 @@ export default class Controller {
       }
     }
 
-    const entriesOrderBy = Object.keys(orderBy);
-    if (entriesOrderBy.length) {
-      const [col, dir] = entriesOrderBy.pop()!;
-      if (col.includes(".")) queryBuilderIn.orderBy(col, dir);
-      else queryBuilderIn.orderBy(`${ModelInUse.tableName}.${col}`, dir);
-    }
+    this.applyOrderByLite(queryBuilderIn, orderBy);
 
     // Filtering by columns
     if (typeof filters === "object") {
@@ -200,6 +195,48 @@ export default class Controller {
     return response
       .then((resp: object[]) => this.successMerge(resp))
       .catch((error: Error) => this.error(error));
+  }
+
+  /**
+   * Apply multi column ordering to an Objection/Knex query.
+   * Accepts an object like: { "created_at": "desc", "user.name": "asc" }
+   *
+   * - Dotted paths (e.g. "user.name") se pasan tal cual (debes haber hecho joinRelated/withGraphJoined).
+   * - Columnas sin punto se cualifican con ModelInUse.tableName.
+   * - Cualquier dir inválida cae a "asc".
+   */
+  applyOrderByLite(
+    queryBuilderIn: any, // QueryBuilder
+    orderBy: Record<string, string> = {}
+  ): void {
+    try {
+      const entries = Object.entries(orderBy);
+      if (!entries.length) return;
+
+      for (const [col, rawDir] of entries) {
+        // --- normalize direction to 'asc' | 'desc'
+        const d = String(rawDir || "").toLowerCase();
+        const dir: "asc" | "desc" = d === "desc" ? "desc" : "asc";
+
+        // --- qualify column
+        const qualified = col.includes(".")
+          ? col
+          : `${this.Model.tableName}.${col}`;
+
+        // --- apply to query
+        queryBuilderIn.orderBy(qualified, dir);
+      }
+    } catch (error: any) {
+      switch (error?.message) {
+        default: {
+          console.error(
+            "ERROR:",
+            error,
+            "---------------continue------------------"
+          );
+        }
+      }
+    }
   }
 
   /**
