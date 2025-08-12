@@ -140,7 +140,7 @@ class AuthController extends MongooseController {
     labelSufix = 'SESSION',
     iv
   } = {}) {
-    //crear nueva sesión
+    //create new session
     const ipReal = req.get('x-forwarded-for') ? req.get('x-forwarded-for').split(',')[0].trim() : req.socket.remoteAddress;
     const ip = ipReal === '::1' ? process.env.HARDCODED_IP : ipReal;
     const sessionName = uuidv4();
@@ -428,7 +428,7 @@ class AuthController extends MongooseController {
       if (verifyPass instanceof Error) throw verifyPass;
       if (!verifyPass) throw new Error('PassError');
       status = 200;
-      //tres meses o 4 horas
+      //three months or four hours
       const expireSecs = rememberme ? 7776000 : 43200;
       const session = await this.createSession(user, { req, expireSecs, times: -1, labelSufix: 'SESSION', iv: group.iv });
       user.sessions.push(session._id);
@@ -452,7 +452,7 @@ class AuthController extends MongooseController {
         toReturn.message = error.message;
       }
     }
-    //TODO: crear sesion y tomar en cuenta rememberme
+    //TODO: create session and respect rememberme
     return this.r(status, code, 'login', toReturn);
   }
 

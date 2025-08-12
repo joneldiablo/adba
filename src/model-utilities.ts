@@ -1,6 +1,16 @@
 import { pascalCase } from "change-case-all";
 import { Model, JSONSchema } from "objection";
 
+/**
+ * Retrieve an Objection model by its table name.
+ *
+ * @param tableName - Name of the table to search for.
+ * @param models - Object containing available models.
+ * @returns The matching model or undefined.
+ *
+ * @example
+ * const User = getModelByTableName("users", allModels);
+ */
 export function getModelByTableName(tableName: string, models: Record<string, typeof Model>) {
   return Object.values(models).find(
     (ModelIn) => ModelIn.tableName === tableName
