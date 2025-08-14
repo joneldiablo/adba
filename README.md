@@ -20,6 +20,7 @@ Generate API REST from any SQL DataBase
 - Configure which tables and methods are exposed and alias table names as needed.
 - Add custom endpoints through the `customEndpoints` option passed to `routesObject`.
 - Customize generated JSON schema, relations and columns via hooks in `generateModels`.
+- Apply multi-column ordering to queries using the controller's `orderBy` support.
 - Utility helpers cover status codes, data formatting, encryption/token helpers and email sending.
 - Create SQL dump files of your database via `dumpDatabase`.
 

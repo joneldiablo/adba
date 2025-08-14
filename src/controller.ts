@@ -198,12 +198,26 @@ export default class Controller {
   }
 
   /**
-   * Apply multi column ordering to an Objection/Knex query.
-   * Accepts an object like: { "created_at": "desc", "user.name": "asc" }
+   * Applies multi-column ordering to an Objection or Knex query builder.
    *
-   * - Dotted paths (e.g. "user.name") se pasan tal cual (debes haber hecho joinRelated/withGraphJoined).
-   * - Columnas sin punto se cualifican con ModelInUse.tableName.
-   * - Cualquier dir inválida cae a "asc".
+   * Accepts an object like `{ created_at: 'desc', 'user.name': 'asc' }`.
+   *
+   * - Dotted paths (e.g. `user.name`) are used as provided. Ensure related
+   *   tables have been joined via `joinRelated` or `withGraphJoined`.
+   * - Columns without a dot are qualified with the model table name.
+   * - Any invalid direction defaults to `'asc'`.
+   *
+   * @param queryBuilderIn - Query builder instance to apply ordering to.
+   * @param orderBy - Mapping of column paths to sort direction.
+   *
+   * @example
+   * ```ts
+   * const query = SampleModel.query();
+   * controller.applyOrderByLite(query, {
+   *   created_at: 'desc',
+   *   'profile.name': 'asc'
+   * });
+   * ```
    */
   applyOrderByLite(
     queryBuilderIn: any, // QueryBuilder
