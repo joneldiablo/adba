@@ -127,7 +127,8 @@
     "build": "yarn test && rm -rf dist/* && yarn build:cjs && yarn build:esm && typedoc",
     "doc": "typedoc",
     "test": "jest --coverage",
-    "test:e2e": "jest --config ./jest.config.e2e.ts --forceExit"
+    "test:e2e": "jest --config ./jest.config.e2e.ts --forceExit",
+    "release":"./release.sh"
   },
   "author": "joneldiablo",
   "license": "ISC",
