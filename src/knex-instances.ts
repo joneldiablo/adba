@@ -69,7 +69,7 @@ async function createKnex(config: Knex.Config): Promise<RefDblDB | false> {
   const db = knex(config);
 
   db.on('query', (queryData) => {
-    if (process.env.NODE_ENV !== 'PRODUCTION') {
+    if (process.env.ENV?.toLowerCase() !== 'prod') {
       console.log('==========SQL Query======');
       console.log(queryData.sql);
       console.log('==========\n');
