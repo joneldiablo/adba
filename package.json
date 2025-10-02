@@ -1,6 +1,6 @@
 {
   "name": "adba",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "Any DataBase to API",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -128,7 +128,7 @@
     "doc": "typedoc",
     "test": "jest --coverage",
     "test:e2e": "jest --config ./jest.config.e2e.ts --forceExit",
-    "release":"./release.sh"
+    "release": "./release.sh"
   },
   "author": "joneldiablo",
   "license": "ISC",
