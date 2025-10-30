@@ -1,6 +1,6 @@
 {
   "name": "adba",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "description": "Any DataBase to API",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -128,7 +128,7 @@
     "doc": "typedoc",
     "test": "jest --coverage",
     "test:e2e": "jest --config ./jest.config.e2e.ts --forceExit",
-    "release":"./release.sh -- --otp 000000",
+    "release": "./release.sh -- --otp 000000",
     "postman:generate": "node generate-postman.js",
     "postman:users": "node generate-postman.js users",
     "postman:products": "node generate-postman.js products"
