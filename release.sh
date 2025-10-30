@@ -147,14 +147,11 @@ echo "🚀 Publishing to npm..."
 
 if [ -n "$OTP" ]; then
   echo "📋 Publishing with OTP: $OTP"
-  echo "📦 Command: npm publish --otp $OTP --registry https://registry.npmjs.org/"
+  echo "📦 Command: npm publish --otp=$OTP
   
   # Capture both stdout and stderr
-  publish_output=$(npm publish --otp "$OTP" --registry https://registry.npmjs.org/ 2>&1)
-  publish_status=$?
-  
-  echo "📋 npm publish output:"
-  echo "$publish_output"
+  npm publish --otp=$OTP
+
 else
   echo "📋 Publishing without OTP..."
   echo "📦 Command: npm publish --registry https://registry.npmjs.org/"
