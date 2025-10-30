@@ -76,6 +76,50 @@ const startServer = async () => {
 startServer().catch(err => console.error(err));
 ```
 
+## Generated Endpoints
+
+ADBA automatically generates RESTful endpoints for each table in your database:
+
+### Standard CRUD Operations
+- `GET /table/` - List records with pagination, filtering, and search
+- `POST /table/` - List records (alternative with request body)
+- `PUT /table/` - Create new records
+- `PATCH /table/` - Update records
+- `DELETE /table/` - Delete records
+
+### ID-based Operations
+- `GET /table/:id` - Get record by numeric ID
+- `PATCH /table/:id` - Update record by ID
+- `DELETE /table/:id` - Delete record by ID
+
+### Name-based Operations ⭐ **NEW**
+- `GET /table/:name` - Get record by name field
+
+### Meta Information
+- `GET /table/meta` - Get table schema and metadata
+- `GET /` - List all available endpoints
+
+### Examples
+```bash
+# List users with pagination
+GET /users/?limit=10&page=0
+
+# Search users by text
+GET /users/?q=john
+
+# Filter active users
+GET /users/?filters[active]=true
+
+# Get user by ID
+GET /users/123
+
+# Get user by name (NEW!)
+GET /users/john-doe
+
+# Get table metadata
+GET /users/meta
+```
+
 ## Adding custom endpoints
 
 `routesObject` accepts a `customEndpoints` option where you can define arbitrary routes bound to your controllers. The object keys are base paths and each contains HTTP method/path strings mapped to `ControllerName.action`.
@@ -178,6 +222,25 @@ metadata can be used to dynamically render a table in the UI.
   }
 }
 ```
+
+## 🚀 Quick Testing with Postman
+
+ADBA includes a complete **Postman collection** for instant API testing! No need to create requests manually.
+
+### Features:
+- ✅ **All endpoints included**: List, Get by ID, Get by Name, Create, Update, Delete, Meta
+- ✅ **Fully configurable**: Just set `{{baseUrl}}` and `{{tableName}}` variables
+- ✅ **Works with any table**: Automatically adapts to your database schema
+- ✅ **Ready-to-use examples**: Pre-filled request bodies and parameters
+
+### Quick Setup:
+1. Import `postman-collection.json` into Postman
+2. Set environment variables:
+   - `baseUrl`: Your API URL (e.g., `http://localhost:3000/api`)
+   - `tableName`: Table to test (e.g., `users`, `products`)
+3. Start testing immediately!
+
+📖 **Full Postman guide**: See [POSTMAN.md](./POSTMAN.md) for detailed instructions.
 
 ## Documentation
 

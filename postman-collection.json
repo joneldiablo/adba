@@ -1,0 +1,537 @@
+{
+  "info": {
+    "name": "ADBA - Any Database to API",
+    "description": "Generic Postman collection for ADBA (Any Database to API). Import this collection and set the {{baseUrl}} and {{tableName}} variables to start testing your API endpoints.\n\nQuick Setup:\n1. Import this collection\n2. Set Environment Variables:\n   - baseUrl: Your API base URL (e.g., http://localhost:3000/api)\n   - tableName: The table name you want to test (e.g., users, products)\n3. Start testing!\n\nFeatures:\n- Full CRUD operations\n- Search by ID and Name\n- Pagination and filtering\n- Meta information\n- Customizable with environment variables",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "adba-generic"
+  },
+  "item": [
+    {
+      "name": "📋 List Records (GET)",
+      "item": [
+        {
+          "name": "List All Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", ""]
+            },
+            "description": "Lists all records from the table with default pagination (20 items per page)"
+          },
+          "response": []
+        },
+        {
+          "name": "List with Pagination",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/?limit=10&page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", ""],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of records per page"
+                },
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page number (0-based)"
+                }
+              ]
+            },
+            "description": "Lists records with custom pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "List with Filters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/?filters[name]=John&filters[active]=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", ""],
+              "query": [
+                {
+                  "key": "filters[name]",
+                  "value": "John",
+                  "description": "Filter by name field"
+                },
+                {
+                  "key": "filters[active]",
+                  "value": "true",
+                  "description": "Filter by active status"
+                }
+              ]
+            },
+            "description": "Lists records with filters applied"
+          },
+          "response": []
+        },
+        {
+          "name": "List with Search (q parameter)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/?q=search-term",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", ""],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "search-term",
+                  "description": "Search across all string fields"
+                }
+              ]
+            },
+            "description": "Search across all string type columns in the table"
+          },
+          "response": []
+        },
+        {
+          "name": "List with Ordering",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/?orderBy[created_at]=desc&orderBy[name]=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", ""],
+              "query": [
+                {
+                  "key": "orderBy[created_at]",
+                  "value": "desc",
+                  "description": "Order by created_at descending"
+                },
+                {
+                  "key": "orderBy[name]",
+                  "value": "asc",
+                  "description": "Then order by name ascending"
+                }
+              ]
+            },
+            "description": "Lists records with custom ordering"
+          },
+          "response": []
+        }
+      ],
+      "description": "List records with various options like pagination, filtering, search, and ordering"
+    },
+    {
+      "name": "📋 List Records (POST)",
+      "item": [
+        {
+          "name": "List with POST Body",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filters\": {\n    \"name\": \"John\",\n    \"active\": true\n  },\n  \"orderBy\": {\n    \"created_at\": \"desc\",\n    \"name\": \"asc\"\n  },\n  \"limit\": 10,\n  \"page\": 0,\n  \"q\": \"search-term\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", ""]
+            },
+            "description": "Lists records using POST method with parameters in the request body"
+          },
+          "response": []
+        }
+      ],
+      "description": "Alternative method to list records using POST with parameters in body"
+    },
+    {
+      "name": "🔍 Get by ID",
+      "item": [
+        {
+          "name": "Get Record by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/{{recordId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", "{{recordId}}"]
+            },
+            "description": "Gets a specific record by its ID. Set the recordId variable to the ID you want to retrieve."
+          },
+          "response": []
+        }
+      ],
+      "description": "Get a specific record by its numeric ID"
+    },
+    {
+      "name": "🔍 Get by Name",
+      "item": [
+        {
+          "name": "Get Record by Name",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/{{recordName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", "{{recordName}}"]
+            },
+            "description": "Gets a specific record by its name. Set the recordName variable to the name you want to search for. This searches in the 'name' field or the first string field if 'name' doesn't exist."
+          },
+          "response": []
+        }
+      ],
+      "description": "Get a specific record by its name field (NEW FEATURE)"
+    },
+    {
+      "name": "➕ Create Records",
+      "item": [
+        {
+          "name": "Create Single Record",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"insert\": {\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"active\": true,\n    \"created_at\": \"2024-01-15T10:30:00Z\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", ""]
+            },
+            "description": "Creates a new record. Modify the fields in the insert object according to your table schema."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Multiple Records",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"insert\": [\n    {\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\",\n      \"active\": true\n    },\n    {\n      \"name\": \"Jane Smith\",\n      \"email\": \"jane@example.com\",\n      \"active\": true\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", ""]
+            },
+            "description": "Creates multiple records in a single request. Pass an array of objects in the insert field."
+          },
+          "response": []
+        }
+      ],
+      "description": "Create new records in the table"
+    },
+    {
+      "name": "✏️ Update Records",
+      "item": [
+        {
+          "name": "Update Single Record",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"update\": {\n    \"id\": 1,\n    \"name\": \"John Doe Updated\",\n    \"email\": \"john.updated@example.com\",\n    \"active\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", ""]
+            },
+            "description": "Updates a record. Include the ID and the fields you want to update."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Record by ID",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"update\": {\n    \"name\": \"John Doe Updated\",\n    \"email\": \"john.updated@example.com\",\n    \"active\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/{{recordId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", "{{recordId}}"]
+            },
+            "description": "Updates a specific record by ID. The ID is taken from the URL path."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Multiple Records",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"update\": [\n    {\n      \"id\": 1,\n      \"name\": \"John Doe Updated\",\n      \"active\": true\n    },\n    {\n      \"id\": 2,\n      \"name\": \"Jane Smith Updated\",\n      \"active\": false\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", ""]
+            },
+            "description": "Updates multiple records in a single request. Pass an array of objects with their IDs."
+          },
+          "response": []
+        }
+      ],
+      "description": "Update existing records in the table"
+    },
+    {
+      "name": "🗑️ Delete Records",
+      "item": [
+        {
+          "name": "Delete Record by ID",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/{{recordId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", "{{recordId}}"]
+            },
+            "description": "Deletes a specific record by its ID. Set the recordId variable to the ID you want to delete."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Multiple Records",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [1, 2, 3]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", ""]
+            },
+            "description": "Deletes multiple records by their IDs. Pass an array of IDs in the request body."
+          },
+          "response": []
+        }
+      ],
+      "description": "Delete records from the table"
+    },
+    {
+      "name": "ℹ️ Meta Information",
+      "item": [
+        {
+          "name": "Get Table Metadata",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{tableName}}/meta",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{tableName}}", "meta"]
+            },
+            "description": "Gets metadata information about the table including JSON schema, column definitions, and table name."
+          },
+          "response": []
+        },
+        {
+          "name": "List All Available Routes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Lists all available routes/endpoints in the API. Useful for discovering what tables and endpoints are available."
+          },
+          "response": []
+        }
+      ],
+      "description": "Get metadata and information about tables and available endpoints"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set some default variables if they don't exist",
+          "if (!pm.environment.get('baseUrl')) {",
+          "    console.log('Setting default baseUrl to http://localhost:3000/api');",
+          "    pm.environment.set('baseUrl', 'http://localhost:3000/api');",
+          "}",
+          "",
+          "if (!pm.environment.get('tableName')) {",
+          "    console.log('Setting default tableName to users');",
+          "    pm.environment.set('tableName', 'users');",
+          "}",
+          "",
+          "if (!pm.environment.get('recordId')) {",
+          "    pm.environment.set('recordId', '1');",
+          "}",
+          "",
+          "if (!pm.environment.get('recordName')) {",
+          "    pm.environment.set('recordName', 'test-name');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "description": "Base URL of your ADBA API (change this to your server URL)"
+    },
+    {
+      "key": "tableName",
+      "value": "users",
+      "description": "Name of the table you want to test (e.g., users, products, orders)"
+    },
+    {
+      "key": "recordId",
+      "value": "1",
+      "description": "ID of a specific record to get/update/delete"
+    },
+    {
+      "key": "recordName",
+      "value": "test-name",
+      "description": "Name of a specific record to search for"
+    }
+  ]
+}

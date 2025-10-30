@@ -53,6 +53,7 @@ export type IRouterMethods = "get" | "post" | "patch" | "delete" | "put";
 export type IControllerMethods =
   | "list"
   | "selectById"
+  | "selectByName"
   | "insert"
   | "update"
   | "delete"

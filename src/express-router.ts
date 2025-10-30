@@ -38,6 +38,7 @@ const definedREST: Record<string, string> = {
   "DELETE /": "delete",
   "GET /meta": "meta",
   //wildcards
+  "GET /:name([\\w\\-\\d]+)": "selectByName",
   "GET /:id(\\d+)": "selectById",
   "PATCH /:id(\\d+)": "update",
   "DELETE /:id(\\d+)": "delete",

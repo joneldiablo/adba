@@ -326,6 +326,43 @@ export default class Controller {
   }
 
   /**
+   * Selects one record by its name field.
+   * @param {object} param0 - Object containing the name parameter.
+   * @param {string} param0.name - The name to search for.
+   * @param {QueryBuilderType<any>} [queryBuilder] - Optional query builder instance.
+   * @returns {Promise<object>} The promise of the resulting data.
+   */
+  public selectByName(
+    { name }: { name: string },
+    queryBuilder?: QueryBuilderType<any>
+  ): Promise<IStatusCode> {
+    const queryBuilderIn = queryBuilder
+      ? queryBuilder.clone()
+      : this.Model.query();
+    queryBuilderIn.clear(true);
+    
+    // Try to find a 'name' column first, if it doesn't exist use the first string column
+    const schema = this.Model.jsonSchema;
+    const properties = schema.properties || {};
+    let nameColumn = 'name';
+    
+    if (!properties[nameColumn]) {
+      // If 'name' column doesn't exist, find the first string column
+      const stringColumns = this.findTypeString();
+      nameColumn = stringColumns[0] || 'name'; // fallback to 'name' if no string columns
+    }
+    
+    queryBuilderIn.findOne({ [nameColumn]: name });
+    if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
+    return queryBuilderIn
+      .then((row: any) => {
+        if (!row) return this.error({ [nameColumn]: name }, 404, 0);
+        return this.success(row);
+      })
+      .catch((error: Error) => this.error(error));
+  }
+
+  /**
    * Inserts one or multiple records.
    *
    * @param {Record<string, any>} data - The data to insert.
