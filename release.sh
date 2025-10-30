@@ -147,39 +147,33 @@ echo "🚀 Publishing to npm..."
 
 if [ -n "$OTP" ]; then
   echo "📋 Publishing with OTP: $OTP"
-  echo "📦 Command: npm publish --otp $OTP --registry https://registry.npmjs.org/"
+  echo "📦 Command: npm publish --otp=$OTP --registry https://registry.npmjs.org/"
   
-  # Capture both stdout and stderr
-  publish_output=$(npm publish --otp "$OTP" --registry https://registry.npmjs.org/ 2>&1)
+  # Execute directly without capturing output to maintain interactivity
+  npm publish --otp="$OTP" --registry https://registry.npmjs.org/
   publish_status=$?
-  
-  echo "📋 npm publish output:"
-  echo "$publish_output"
 else
   echo "📋 Publishing without OTP..."
   echo "📦 Command: npm publish --registry https://registry.npmjs.org/"
   
-  # Capture both stdout and stderr
-  publish_output=$(npm publish --registry https://registry.npmjs.org/ 2>&1)
+  # Execute directly without capturing output to maintain interactivity
+  npm publish --registry https://registry.npmjs.org/
   publish_status=$?
-  
-  echo "📋 npm publish output:"
-  echo "$publish_output"
 fi
 
 # Check if publish was successful
 if [ $publish_status -eq 0 ]; then
   echo "✅ Successfully published to npm!"
 else
-  echo "❌ Failed to publish to npm."
-  echo "Exit code: $publish_status"
-  echo "Output: $publish_output"
+  echo "❌ Failed to publish to npm (exit code: $publish_status)"
   echo ""
   echo "Common issues:"
   echo "  - Authentication expired: Run 'npm login' again"
-  echo "  - 2FA required: Add --otp YOUR_OTP"
+  echo "  - 2FA required: Provide valid OTP"
   echo "  - Version already exists: Update version in package.json"
   echo "  - Registry issue: Check 'npm config get registry'"
+  echo ""
+  echo "You can retry with: ./release.sh --otp YOUR_NEW_OTP"
   exit 1
 fi
 
