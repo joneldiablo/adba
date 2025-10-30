@@ -3,10 +3,24 @@
 OTP=""
 VERBOSE=false
 
+# Clean up npm environment variables that cause warnings
+unset npm_config_version_commit_hooks
+unset npm_config_version_tag_prefix  
+unset npm_config_version_git_message
+unset npm_config_argv
+unset npm_config_version_git_tag
+
+# Force npm registry configuration
+export NPM_CONFIG_REGISTRY="https://registry.npmjs.org/"
+
 # Check npm authentication and registry
 echo "🔍 Checking npm configuration..."
-npm config get registry
-echo "Current npm user: $(npm whoami 2>/dev/null || echo 'Not logged in')"
+
+# Force npm to use the correct registry
+npm config set registry https://registry.npmjs.org/ --location=user
+
+echo "Registry: $(npm config get registry)"
+echo "Current npm user: $(npm whoami --registry=https://registry.npmjs.org/ 2>/dev/null || echo 'Not logged in')"
 
 # Usage function
 usage() {
@@ -101,25 +115,28 @@ git push origin "$new_version"
 
 # Verify npm authentication before publishing
 echo "🔍 Checking npm authentication..."
-echo "Registry: $(npm config get registry)"
-echo "Auth token: $(npm config get //registry.npmjs.org/:_authToken | sed 's/./*/g')"
 
-# Check npm user
-npm_user=$(npm whoami 2>&1)
+# Force npm registry (ignore yarn registry)
+export NPM_CONFIG_REGISTRY="https://registry.npmjs.org/"
+npm config set registry https://registry.npmjs.org/ --location=user
+
+echo "Registry: $(npm config get registry)"
+
+# Check npm user (filter out warnings, use specific registry)
+npm_user=$(npm whoami --registry=https://registry.npmjs.org/ 2>/dev/null)
 npm_auth_status=$?
 
 if [ $npm_auth_status -ne 0 ]; then
   echo "❌ Error: Not authenticated with npm."
   echo "Debug information:"
-  echo "  - npm whoami output: $npm_user"
-  echo "  - npm config get registry: $(npm config get registry)"
+  echo "  - Registry: $(npm config get registry)"
   echo "  - HOME: $HOME"
   echo "  - USER: $USER"
   echo ""
   echo "Please ensure you are logged in:"
-  echo "  1. Run: npm login"
-  echo "  2. Or set auth token: npm config set //registry.npmjs.org/:_authToken YOUR_TOKEN"
-  echo "  3. Verify with: npm whoami"
+  echo "  1. Run: npm login --registry=https://registry.npmjs.org/"
+  echo "  2. Verify with: npm whoami --registry=https://registry.npmjs.org/"
+  echo "  3. Then retry the release"
   exit 1
 fi
 

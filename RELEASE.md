@@ -5,18 +5,58 @@ This document provides detailed information about the ADBA release process and t
 ## Quick Release
 
 ```bash
-# 1. Verify prerequisites
+# 1. Setup npm configuration (first time only)
+./setup-npm.sh
+
+# 2. Verify prerequisites
 ./verify-release.sh
 
-# 2. Execute release with your OTP
+# 3. Execute full release with your OTP
 ./release.sh --otp 123456
 ```
 
+## Alternative: Publish Only
+
+If the build and version were already updated but publish failed:
+
+```bash
+# Just publish the current version
+./publish-only.sh --otp 123456
+```
+
+## Available Scripts
+
+### `setup-npm.sh` - Initial Setup
+- Configures npm registry to use npmjs.org
+- Checks authentication status
+- Provides login instructions if needed
+
+### `verify-release.sh` - Pre-Release Verification
+- Verifies npm authentication and registry
+- Checks package versions and git status
+- Ensures all prerequisites are met
+
+### `release.sh` - Full Release Process
+- Complete build, version, and publish cycle
+- Handles git operations and npm publishing
+- Supports verbose mode for debugging
+
+### `publish-only.sh` - Publish Current Version
+- Quick publish without build/version steps
+- Useful when previous release failed at publish step
+- Includes authentication verification
+
 ## Detailed Release Process
 
-### Step 1: Pre-Release Verification
+### Step 1: Initial Setup (First Time Only)
 
-Run the verification script to check all prerequisites:
+```bash
+./setup-npm.sh
+```
+
+This configures npm to use the correct registry and checks authentication.
+
+### Step 2: Pre-Release Verification
 
 ```bash
 ./verify-release.sh
@@ -24,29 +64,33 @@ Run the verification script to check all prerequisites:
 
 This script checks:
 - ✅ npm authentication status
-- 📦 npm registry configuration
+- 📦 npm registry configuration (forces npmjs.org)
 - 📊 Current vs local package versions
 - 🌲 Git branch and uncommitted changes
 - 📦 Package access permissions
 
-### Step 2: Release Execution
+### Step 3: Release Execution
 
 ```bash
-# Basic release
+# Full release (recommended)
 ./release.sh --otp YOUR_OTP
 
 # Verbose release (for debugging)
 ./release.sh --otp YOUR_OTP --verbose
+
+# Publish only (if build already done)
+./publish-only.sh --otp YOUR_OTP
 ```
 
 The release script performs these steps:
-1. **Authentication Check**: Verifies npm login and registry
-2. **Git Validation**: Checks for uncommitted changes
-3. **Branch Management**: Merges to master if needed
-4. **Build Process**: Runs `yarn build` and generates exports
-5. **Version Update**: Increments version automatically
-6. **Git Operations**: Commits, tags, and pushes changes
-7. **npm Publishing**: Publishes with OTP and registry specification
+1. **Environment Setup**: Cleans npm config and sets correct registry
+2. **Authentication Check**: Verifies npm login with npmjs.org registry
+3. **Git Validation**: Checks for uncommitted changes
+4. **Branch Management**: Merges to master if needed
+5. **Build Process**: Runs `yarn build` and generates exports
+6. **Version Update**: Increments version automatically
+7. **Git Operations**: Commits, tags, and pushes changes
+8. **npm Publishing**: Publishes with OTP and explicit registry
 
 ## Common Issues and Solutions
 
