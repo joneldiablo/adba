@@ -217,5 +217,10 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,macos,linux,node
 
+# Generated Postman collections (keep templates)
+postman-*-collection.json
+!postman-collection.json
+!postman-environment.json
+
 Explicar
 

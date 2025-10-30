@@ -94,6 +94,13 @@ describe("routesObject function", () => {
           TestController,
           TestModel,
         ],
+        "GET /test-table/:name([\\w\\-\\d]+)": [
+          "GET",
+          "/test-table/:name([\\w\\-\\d]+)",
+          "selectByName",
+          TestController,
+          TestModel,
+        ],
       })
     );
   });
@@ -144,6 +151,7 @@ describe("routesObject function", () => {
           "GET /": true,
           "GET /:id(\\d+)": true,
           "GET /meta": true,
+          "GET /:name([\\w\\-\\d]+)": true,
         },
       },
     };
@@ -176,6 +184,13 @@ describe("routesObject function", () => {
           TestController,
           TestModel,
         ],
+        "GET /test-table/:name([\\w\\-\\d]+)": [
+          "GET",
+          "/test-table/:name([\\w\\-\\d]+)",
+          "selectByName",
+          TestController,
+          TestModel,
+        ],
       })
     );
     const notKeys = [
@@ -185,6 +200,7 @@ describe("routesObject function", () => {
       "DELETE /test-table/",
       "PATCH /test-table/:id(\\d+)",
       "DELETE /test-table/:id(\\d+)",
+      "GET /test-table/:name([\\w\\-\\d]+)",
     ];
     notKeys.forEach((k) => {
       expect(result).not.toHaveProperty(k);
@@ -257,7 +273,7 @@ describe("routesObject function", () => {
         ],
       })
     );
-    const notKeys = ["GET /", "GET /:id(\\d+)", "GET /test-table/meta"];
+    const notKeys = ["GET /", "GET /:id(\\d+)", "GET /test-table/meta", "GET /test-table/:name([\\w\\-\\d]+)"];
     notKeys.forEach((k) => {
       expect(result).not.toHaveProperty(k);
     });
@@ -335,6 +351,13 @@ describe("routesObject function", () => {
           "GET",
           "/alias-for-table/meta",
           "meta",
+          TestController,
+          TestModel,
+        ],
+        "GET /alias-for-table/:name([\\w\\-\\d]+)": [
+          "GET",
+          "/alias-for-table/:name([\\w\\-\\d]+)",
+          "selectByName",
           TestController,
           TestModel,
         ],

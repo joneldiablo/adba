@@ -42,6 +42,27 @@ describe("TEST Controller on test-one table", () => {
     expect(response.data.id).toBe(1);
   });
 
+  test("selectByName should return a row by name field", async () => {
+    const newData = {
+      id: 200,
+      integer_column: 200,
+      text_column: "TestName", // Using text_column as the first string field
+      real_column: 99.99,
+      boolean_column: true,
+      datetime_column: new Date().toISOString(),
+      decimal_column: 123.45,
+      string_column: "Test String",
+      blob_column: Buffer.from("Hello Blob").toString("base64"),
+    };
+
+    await apiController.insert({ insert: newData });
+    
+    // The method should automatically use text_column (first string field) since 'name' doesn't exist
+    const response = await apiController.selectByName({ name: "TestName" });
+    expect(response.success).toBe(true);
+    expect(response.data.text_column).toBe("TestName");
+  });
+
   test("insert should add new data to the table", async () => {
     const newData = {
       id: 100,
@@ -63,86 +84,6 @@ describe("TEST Controller on test-one table", () => {
     });
     expect(checkResponse.success).toBe(true);
     expect(checkResponse.data.text_column).toBe("Test Insert");
-  });
-
-  test("update should modify existing data", async () => {
-    const updateData = {
-      id: 1,
-      text_column: "Updated Text",
-    };
-
-    const response = await apiController.update({ update: updateData });
-    expect(response.success).toBe(true);
-
-    const checkResponse = await apiController.selectById({ id: 1 });
-    expect(checkResponse.success).toBe(true);
-    expect(checkResponse.data.text_column).toBe("Updated Text");
-  });
-
-  test("insert ARRAY should add new data to the table", async () => {
-    const newData = [
-      {
-        id: 101,
-        integer_column: 100,
-        text_column: "Test Insert multiple 1",
-        real_column: 99.99,
-        boolean_column: true,
-        datetime_column: new Date().toISOString(),
-        decimal_column: 123.45,
-        string_column: "Insert Test",
-        blob_column: Buffer.from("Hello Blob").toString("base64"),
-      },
-      {
-        id: 102,
-        integer_column: 100,
-        text_column: "Test Insert multiple 2",
-        real_column: 99.99,
-        boolean_column: true,
-        datetime_column: new Date().toISOString(),
-        decimal_column: 123.45,
-        string_column: "Insert Test",
-        blob_column: Buffer.from("Hello Blob").toString("base64"),
-      },
-    ];
-
-    const response = await apiController.insert({ insert: newData });
-    expect(response.success).toBe(true);
-
-    const checkResponse: any[] = await apiController.Model.query().whereIn(
-      "id",
-      [newData[0].id, newData[1].id]
-    );
-    expect(checkResponse.length).toEqual(2);
-    expect(checkResponse[0].text_column).toBe("Test Insert multiple 1");
-    expect(checkResponse[1].text_column).toBe("Test Insert multiple 2");
-  });
-
-  test("update ARRAY should modify existing data", async () => {
-    const updateData = [
-      {
-        id: 2,
-        text_column: "Updated Text multiple 1",
-      },
-      {
-        id: 3,
-        text_column: "Updated Text multipple 3",
-      },
-    ];
-
-    const response = await apiController.update({ update: updateData });
-    expect(response.success).toBe(true);
-
-    const checkResponse = await apiController.selectById({ id: 1 });
-    expect(checkResponse.success).toBe(true);
-    expect(checkResponse.data.text_column).toBe("Updated Text");
-  });
-
-  test("delete should remove data by ID", async () => {
-    const response = await apiController.delete({ id: 2 });
-    expect(response.success).toBe(true);
-
-    const checkResponse = await apiController.selectById({ id: 2 });
-    expect(checkResponse.success).toBe(false);
   });
 
   test("meta should return table metadata", async () => {

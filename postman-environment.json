@@ -1,0 +1,33 @@
+{
+  "id": "adba-environment-template",
+  "name": "ADBA Environment Template",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "description": "Base URL of your ADBA API server",
+      "enabled": true
+    },
+    {
+      "key": "tableName",
+      "value": "users",
+      "description": "Name of the table you want to test (change this to your actual table name)",
+      "enabled": true
+    },
+    {
+      "key": "recordId",
+      "value": "1",
+      "description": "ID of a specific record for GET/UPDATE/DELETE operations",
+      "enabled": true
+    },
+    {
+      "key": "recordName",
+      "value": "admin",
+      "description": "Name value for searching records by name",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2025-10-29T00:00:00.000Z",
+  "_postman_exported_using": "ADBA Generator"
+}
