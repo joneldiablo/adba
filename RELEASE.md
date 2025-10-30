@@ -20,7 +20,12 @@ This document provides detailed information about the ADBA release process and t
 If the build and version were already updated but publish failed:
 
 ```bash
-# Just publish the current version
+# Interactive publish (recommended - allows OTP retry)
+./interactive-publish.sh --otp 123456
+# OR let npm prompt for OTP
+./interactive-publish.sh
+
+# Quick publish (non-interactive)
 ./publish-only.sh --otp 123456
 ```
 
@@ -41,7 +46,13 @@ If the build and version were already updated but publish failed:
 - Handles git operations and npm publishing
 - Supports verbose mode for debugging
 
-### `publish-only.sh` - Publish Current Version
+### `interactive-publish.sh` - Interactive Publishing ⭐ NEW
+- Maintains terminal interactivity for OTP prompts
+- Allows npm to re-prompt for OTP if incorrect
+- Best option when OTP might expire or be mistyped
+- Can work with or without initial OTP parameter
+
+### `publish-only.sh` - Quick Publish
 - Quick publish without build/version steps
 - Useful when previous release failed at publish step
 - Includes authentication verification
@@ -78,9 +89,18 @@ This script checks:
 # Verbose release (for debugging)
 ./release.sh --otp YOUR_OTP --verbose
 
-# Publish only (if build already done)
+# Interactive publish only (maintains terminal control)
+./interactive-publish.sh --otp YOUR_OTP
+./interactive-publish.sh  # Let npm prompt for OTP
+
+# Quick publish only (if build already done)
 ./publish-only.sh --otp YOUR_OTP
 ```
+
+**💡 Tip**: Use `interactive-publish.sh` when:
+- Your OTP might expire during the process
+- You want npm to re-prompt for OTP if incorrect
+- You prefer letting npm handle OTP validation interactively
 
 The release script performs these steps:
 1. **Environment Setup**: Cleans npm config and sets correct registry

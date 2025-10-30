@@ -1,28 +1,18 @@
 #!/bin/bash
 
-# Simple npm publish script for when build/version is already done
-echo "🚀 Publishing ADBA to npm..."
+# Interactive npm publish script
+echo "🚀 Interactive ADBA Publishing..."
 
-# Clean up npm environment variables
+# Clean environment
 unset npm_config_version_commit_hooks
 unset npm_config_version_tag_prefix  
 unset npm_config_version_git_message
 unset npm_config_argv
 unset npm_config_version_git_tag
 
-# Force npm registry
+# Configure npm
 export NPM_CONFIG_REGISTRY="https://registry.npmjs.org/"
 npm config set registry https://registry.npmjs.org/ --location=user
-
-# Check for OTP argument
-OTP=""
-if [ "$1" = "--otp" ] && [ -n "$2" ]; then
-  OTP="$2"
-elif [ -z "$1" ]; then
-  echo "Usage: $0 --otp YOUR_OTP"
-  echo "Example: $0 --otp 123456"
-  exit 1
-fi
 
 # Verify authentication
 echo "🔍 Verifying authentication..."
@@ -33,29 +23,40 @@ if [ $? -ne 0 ]; then
 fi
 echo "✅ Authenticated as: $npm_user"
 
-# Check current version
-current_version=$(node -p "require('./package.json').version")
+# Get current version
+current_version=$(node -p "require('./package.json').version" 2>/dev/null)
+if [ $? -ne 0 ]; then
+  echo "❌ Error reading package.json"
+  exit 1
+fi
 echo "📦 Publishing version: $current_version"
 
-# Publish with OTP
-echo "🚀 Publishing to npm..."
-if [ -n "$OTP" ]; then
-  echo "📦 Executing: npm publish --otp=$OTP --registry https://registry.npmjs.org/"
-  npm publish --otp="$OTP" --registry https://registry.npmjs.org/
-  publish_status=$?
+# Interactive publish
+echo ""
+echo "🎯 Starting interactive publish..."
+echo "Note: If OTP is incorrect, npm will prompt you to enter a new one"
+echo ""
+
+# Check if user provided OTP as argument
+if [ "$1" = "--otp" ] && [ -n "$2" ]; then
+  echo "📋 Using provided OTP: $2"
+  npm publish --otp="$2" --registry https://registry.npmjs.org/
 else
-  echo "📦 Executing: npm publish --registry https://registry.npmjs.org/"
+  echo "📋 Publishing (npm will prompt for OTP if needed)..."
   npm publish --registry https://registry.npmjs.org/
-  publish_status=$?
 fi
 
-# Check result
+publish_status=$?
+
+echo ""
 if [ $publish_status -eq 0 ]; then
   echo "✅ Successfully published $current_version to npm!"
   echo "🌐 Available at: https://www.npmjs.com/package/adba"
 else
   echo "❌ Publish failed (exit code: $publish_status)"
   echo ""
-  echo "You can retry with: ./publish-only.sh --otp YOUR_NEW_OTP"
-  exit 1
+  echo "To retry:"
+  echo "  ./interactive-publish.sh --otp YOUR_OTP"
+  echo "  OR"
+  echo "  ./interactive-publish.sh (let npm prompt for OTP)"
 fi
