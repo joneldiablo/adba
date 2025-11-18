@@ -25,6 +25,10 @@ import GenericController from "./controller";
 import Controller from "./controller";
 import getStatusCode from "./status-codes";
 
+const ctrlRef = {
+  GenericController,
+};
+
 const aliasing: Record<string, string> = {};
 
 /**
@@ -87,7 +91,7 @@ function prepareRoutesObj(
     Object.values(controllers).find((C) => {
       const ctrl = new C(Model);
       return ctrl.Model.tableName === tableName;
-    }) || GenericController;
+    }) || ctrlRef.GenericController;
 
   if (includeTable === true) {
     Object.entries(definedREST).forEach(([service, action]) => {
@@ -192,7 +196,7 @@ function buildRoutesObj(
  */
 export function routesObject(
   models: Record<string, typeof Model>,
-  controllers: Record<string, typeof GenericController> = {},
+  controllers: Record<string, typeof ctrlRef.GenericController> = {},
   config: IExpressRouterConf = {}
 ) {
   const routesObj: IRoutesObject = {};
@@ -266,6 +270,17 @@ export function listRoutes(router: express.Router) {
     }
   });
   return routes;
+}
+
+/**
+ * Replaces the default GenericController with custom controller reference.
+ * @param CustomController - A Class Controller extends from the original GenericController.
+ */
+export function replaceGenericController(
+  CustomController: typeof GenericController
+) {
+  ctrlRef.GenericController = CustomController;
+  return true;
 }
 
 /**
