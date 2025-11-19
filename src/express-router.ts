@@ -366,9 +366,19 @@ export default function expressRouter(
 
         try {
           const controller = new TheController(TheModel);
+          // Normalize query keys: convert bracket notation (filters[active])
+          // into dot notation (filters.active) so `unflatten` handles both.
+          const rawQuery = req.query || {};
+          const normalizedQuery: Record<string, any> = {};
+          Object.keys(rawQuery).forEach((k) => {
+            // Replace bracket groups like `[key]` with `.key`
+            const nk = k.replace(/\[(\w+)\]/g, '.$1');
+            normalizedQuery[nk] = (rawQuery as any)[k];
+          });
+
           const all = {
             ...(req.body || {}),
-            ...unflatten(req.query || {})!,
+            ...unflatten(normalizedQuery)!,
             ...(req.params || {}),
           };
           const ctrlAction: Function =

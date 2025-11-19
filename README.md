@@ -168,18 +168,28 @@ GET /api/users/?q=john                # Search for "john" in all string columns
 GET /api/products/?q=laptop           # Search for "laptop" in all text fields
 ```
 
-#### **Filtering**
+### **Filtering**
+
+Both dot-notation and bracket-notation querystring formats are supported. The router normalizes bracket-style keys (e.g. `filters[age][$gte]=18`) into dot notation before processing, so either form works.
+
 ```bash
-# Simple equality
+# Simple equality (dot notation)
+GET /api/users/?filters.active=true
+GET /api/products/?filters.category=electronics
+
+# Simple equality (bracket notation)
 GET /api/users/?filters[active]=true
 GET /api/products/?filters[category]=electronics
 
-# Comparison operators
-GET /api/users/?filters[age][$gte]=18        # age >= 18
-GET /api/products/?filters[price][$lt]=100   # price < 100
-GET /api/orders/?filters[date][$gt]=2023-01-01
+# Comparison operators (either form)
+GET /api/users/?filters.age.$gte=18        # age >= 18
+GET /api/users/?filters[age][$gte]=18      # equivalent bracket form
+GET /api/products/?filters.price.$lt=100
+GET /api/products/?filters[price][$lt]=100
+GET /api/orders/?filters.date.$gt=2023-01-01
 
 # Multiple filters
+GET /api/users/?filters.active=true&filters.role=admin
 GET /api/users/?filters[active]=true&filters[role]=admin
 ```
 
