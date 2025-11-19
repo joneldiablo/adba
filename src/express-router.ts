@@ -33,6 +33,23 @@ const aliasing: Record<string, string> = {};
 
 /**
  * Predefined RESTful routes mapped to controller actions.
+ *
+ * @example
+ * ```typescript
+ * // Default routes for a table
+ * {
+ *   "GET /": "list",
+ *   "POST /": "list",
+ *   "PUT /": "insert",
+ *   "PATCH /": "update",
+ *   "DELETE /": "delete",
+ *   "GET /meta": "meta",
+ *   "GET /:name([\\w\\-\\d]+)": "selectByName",
+ *   "GET /:id(\\d+)": "selectById",
+ *   "PATCH /:id(\\d+)": "update",
+ *   "DELETE /:id(\\d+)": "delete"
+ * }
+ * ```
  */
 const definedREST: Record<string, string> = {
   "GET /": "list",
@@ -273,21 +290,39 @@ export function listRoutes(router: express.Router) {
 }
 
 /**
- * Replaces the default GenericController with custom controller reference.
- * @param CustomController - A Class Controller extends from the original GenericController.
+ * Replaces the default GenericController with a custom controller reference.
+ *
+ * @param CustomController - A class that extends from the original GenericController.
+ * @returns {boolean} True if replacement was successful.
+ *
+ * @example
+ * ```typescript
+ * class MyController extends GenericController {}
+ * replaceGenericController(MyController);
+ * ```
  */
 export function replaceGenericController(
   CustomController: typeof GenericController
-) {
+): boolean {
   ctrlRef.GenericController = CustomController;
   return true;
 }
 
 /**
  * Main function to configure an Express router with dynamic routes.
+ *
  * @param routesObject - The routes object containing route definitions.
  * @param config - Configuration options for the router.
  * @returns The configured Express router.
+ *
+ * @example
+ * ```typescript
+ * import { expressRouter, routesObject } from 'adba';
+ * const models = await generateModels(knexInstance);
+ * const routes = routesObject(models);
+ * const router = expressRouter(routes, { debugLog: true });
+ * app.use('/api', router);
+ * ```
  */
 export default function expressRouter(
   routesObject: IRoutesObject,
@@ -297,7 +332,7 @@ export default function expressRouter(
     afterProcess = (tn: string, a: string, data: any, i: string) => data,
     debugLog = false,
   } = {}
-) {
+): express.Router {
   Object.values(routesObject).forEach((value: IRoutesObject[1]) => {
     const [method, path, action, TheController, TheModel] = value;
     const routerMethod =
