@@ -618,6 +618,10 @@ const columns = jsonSchemaToColumns(
 );
 ```
 
+**About columnNames Context:**
+
+The `jsonSchemaToColumns()` function uses the `columnNames` dbl-utils dictionary context to translate column names to user-friendly labels. 
+
 ## 🎯 Practical API Request Examples
 
 ### Creating Records with cURL
