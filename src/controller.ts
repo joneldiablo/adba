@@ -145,24 +145,104 @@ export default class Controller {
             ? col
             : ModelInUse.tableName + "." + col;
           const search = filters[col];
+
+          // Support operator objects, e.g. { age: { $gte: 18, $lt: 65 } }
+          if (search && typeof search === "object" && !Array.isArray(search)) {
+            const prop =
+              (ModelInUse.jsonSchema &&
+                ModelInUse.jsonSchema.properties &&
+                (ModelInUse.jsonSchema.properties as any)[col]) ||
+              {};
+            const isNumeric = [
+              "number",
+              "integer",
+              "float",
+              "decimal",
+            ].includes(prop.type);
+
+            Object.entries(search).forEach(([op, val]) => {
+              // Normalize single values for numeric columns
+              const value =
+                isNumeric && !Array.isArray(val) ? Number(val) : val;
+              switch (op) {
+                case "$gte":
+                  builder.where(tableColumn, ">=", value);
+                  break;
+                case "$gt":
+                  builder.where(tableColumn, ">", value);
+                  break;
+                case "$lte":
+                  builder.where(tableColumn, "<=", value);
+                  break;
+                case "$lt":
+                  builder.where(tableColumn, "<", value);
+                  break;
+                case "$ne":
+                  builder.where(tableColumn, "<>", value);
+                  break;
+                case "$in":
+                  builder.whereIn(
+                    tableColumn,
+                    Array.isArray(value) ? value : [value]
+                  );
+                  break;
+                case "$nin":
+                  builder.whereNotIn(
+                    tableColumn,
+                    Array.isArray(value) ? value : [value]
+                  );
+                  break;
+                case "$between":
+                  if (Array.isArray(value) && value.length === 2)
+                    builder.whereBetween(tableColumn, value);
+                  break;
+                case "$nbetween":
+                  if (Array.isArray(value) && value.length === 2)
+                    builder.whereNotBetween(tableColumn, value);
+                  break;
+                case "$like":
+                  builder.where(tableColumn, "like", String(value));
+                  break;
+                case "$ilike":
+                  // Use case-insensitive match where supported (Postgres); fallback to lower comparison
+                  builder.whereRaw("LOWER(??) LIKE LOWER(?)", [
+                    tableColumn,
+                    String(value),
+                  ]);
+                  break;
+                default:
+                  // Unknown operator: fallback to equality
+                  builder.where(tableColumn, value as any);
+              }
+            });
+            return;
+          }
+
           if (Array.isArray(search)) {
+            const prop =
+              (ModelInUse.jsonSchema &&
+                ModelInUse.jsonSchema.properties &&
+                (ModelInUse.jsonSchema.properties as any)[col]) ||
+              {};
             const where =
-              ModelInUse.jsonSchema.properties[col].type === "string" ||
-              search.length > 2
+              prop.type === "string" || search.length > 2
                 ? "whereIn"
                 : "whereBetween";
-            builder[where](tableColumn, search);
-          } else if (ModelInUse.jsonSchema.properties[col]) {
-            if (ModelInUse.jsonSchema.properties[col].type === "string") {
+            builder[where](tableColumn, search as any);
+          } else if (
+            ModelInUse.jsonSchema &&
+            (ModelInUse.jsonSchema.properties as any)[col]
+          ) {
+            const propType = (ModelInUse.jsonSchema.properties as any)[col]
+              .type;
+            if (propType === "string") {
               builder.where(tableColumn, "like", "%" + search + "%");
             } else if (
-              ["number", "integer", "float", "decimal"].includes(
-                ModelInUse.jsonSchema.properties[col].type
-              )
+              ["number", "integer", "float", "decimal"].includes(propType)
             ) {
               builder.where(tableColumn, Number(search));
             } else {
-              builder.where(tableColumn, search);
+              builder.where(tableColumn, search as any);
             }
           } else {
             builder.where(tableColumn, "like", "%" + search + "%");
@@ -340,18 +420,18 @@ export default class Controller {
       ? queryBuilder.clone()
       : this.Model.query();
     queryBuilderIn.clear(true);
-    
+
     // Try to find a 'name' column first, if it doesn't exist use the first string column
     const schema = this.Model.jsonSchema;
     const properties = schema.properties || {};
-    let nameColumn = 'name';
-    
+    let nameColumn = "name";
+
     if (!properties[nameColumn]) {
       // If 'name' column doesn't exist, find the first string column
       const stringColumns = this.findTypeString();
-      nameColumn = stringColumns[0] || 'name'; // fallback to 'name' if no string columns
+      nameColumn = stringColumns[0] || "name"; // fallback to 'name' if no string columns
     }
-    
+
     queryBuilderIn.findOne({ [nameColumn]: name });
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
     return queryBuilderIn
@@ -395,11 +475,15 @@ export default class Controller {
     data: Record<string, any>,
     queryBuilder?: QueryBuilderType<any>
   ): Promise<IStatusCode> {
+    const update = data.id ? data : data.update;
+    if (!update)
+      return Promise.resolve(this.error("No update data provided", 400, 0));
     const queryBuilderIn = queryBuilder
       ? queryBuilder.clone()
       : this.Model.query();
     queryBuilderIn.clear(true);
-    queryBuilderIn.upsertGraph(data.update, { allowRefs: true });
+
+    queryBuilderIn.upsertGraph(update, { allowRefs: true });
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
     return queryBuilderIn
       .then((resp: any) => this.success(resp))

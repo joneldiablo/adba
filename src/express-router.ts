@@ -33,6 +33,23 @@ const aliasing: Record<string, string> = {};
 
 /**
  * Predefined RESTful routes mapped to controller actions.
+ *
+ * @example
+ * ```typescript
+ * // Default routes for a table
+ * {
+ *   "GET /": "list",
+ *   "POST /": "list",
+ *   "PUT /": "insert",
+ *   "PATCH /": "update",
+ *   "DELETE /": "delete",
+ *   "GET /meta": "meta",
+ *   "GET /:name([\\w\\-\\d]+)": "selectByName",
+ *   "GET /:id(\\d+)": "selectById",
+ *   "PATCH /:id(\\d+)": "update",
+ *   "DELETE /:id(\\d+)": "delete"
+ * }
+ * ```
  */
 const definedREST: Record<string, string> = {
   "GET /": "list",
@@ -273,21 +290,91 @@ export function listRoutes(router: express.Router) {
 }
 
 /**
- * Replaces the default GenericController with custom controller reference.
- * @param CustomController - A Class Controller extends from the original GenericController.
+ * Generates a summary of available services (tables) with their base endpoints.
+ * Groups routes by table name and returns one representative endpoint per table.
+ * Excludes custom endpoints.
+ *
+ * @param routesObj - The routes object containing route definitions.
+ * @param customEndpointPaths - Optional set of custom endpoint paths to exclude.
+ * @returns An object mapping table names (in kebab-case) to their base endpoints.
+ *
+ * @example
+ * ```typescript
+ * // Returns:
+ * // {
+ * //   "users": "GET /users",
+ * //   "join-users": "GET /join-users",
+ * //   "other-table": "GET /other-table"
+ * // }
+ * ```
+ */
+export function generateServicesSummary(
+  routesObj: IRoutesObject,
+  customEndpointPaths?: Set<string>
+): Record<string, string> {
+  const services: Record<string, string> = {};
+
+  Object.values(routesObj).forEach((value: IRoutesObject[1]) => {
+    const [method, path] = value;
+    
+    // Extract the base path (first segment after /)
+    // Example: "/users" from "/users/123" or "/users/meta"
+    const pathSegments = path.split('/').filter(Boolean);
+    if (pathSegments.length === 0) return;
+    
+    const baseService = pathSegments[0];
+    
+    // Skip if this is a custom endpoint
+    if (customEndpointPaths?.has(baseService)) return;
+    
+    // Only add if not already added (to get just one per service)
+    // Prefer GET method for the representative route
+    if (!services[baseService] || method === 'GET') {
+      services[baseService] = `${method} /${baseService}`;
+    }
+  });
+
+  return services;
+}
+
+/**
+ * Replaces the default GenericController with a custom controller reference.
+ *
+ * @param CustomController - A class that extends from the original GenericController.
+ * @returns {boolean} True if replacement was successful.
+ *
+ * @example
+ * ```typescript
+ * class MyController extends GenericController {}
+ * replaceGenericController(MyController);
+ * ```
  */
 export function replaceGenericController(
   CustomController: typeof GenericController
-) {
+): boolean {
   ctrlRef.GenericController = CustomController;
   return true;
 }
 
 /**
  * Main function to configure an Express router with dynamic routes.
+ *
  * @param routesObject - The routes object containing route definitions.
  * @param config - Configuration options for the router.
+ * @param config.router - Express router instance.
+ * @param config.beforeProcess - Hook called before processing a request.
+ * @param config.afterProcess - Hook called after processing a request.
+ * @param config.debugLog - Enable debug logging.
  * @returns The configured Express router.
+ *
+ * @example
+ * ```typescript
+ * import { expressRouter, routesObject } from 'adba';
+ * const models = await generateModels(knexInstance);
+ * const routes = routesObject(models);
+ * const router = expressRouter(routes, { debugLog: true });
+ * app.use('/api', router);
+ * ```
  */
 export default function expressRouter(
   routesObject: IRoutesObject,
@@ -297,7 +384,24 @@ export default function expressRouter(
     afterProcess = (tn: string, a: string, data: any, i: string) => data,
     debugLog = false,
   } = {}
-) {
+): express.Router {
+  // Detect custom endpoint paths by checking if the route's Model is the generic Model class
+  // (custom endpoints use Model directly, while table routes use specific Model subclasses)
+  const customEndpointPaths = new Set<string>();
+  Object.values(routesObject).forEach((value: IRoutesObject[1]) => {
+    const [, path, , , TheModel] = value;
+    if (TheModel === Model) {
+      // This is a custom endpoint, extract its base path
+      const pathSegments = path.split('/').filter(Boolean);
+      if (pathSegments.length > 0) {
+        customEndpointPaths.add(pathSegments[0]);
+      }
+    }
+  });
+
+  // Generate services summary before setting up routes (excluding custom endpoints)
+  const servicesSummary = generateServicesSummary(routesObject, customEndpointPaths);
+
   Object.values(routesObject).forEach((value: IRoutesObject[1]) => {
     const [method, path, action, TheController, TheModel] = value;
     const routerMethod =
@@ -331,9 +435,19 @@ export default function expressRouter(
 
         try {
           const controller = new TheController(TheModel);
+          // Normalize query keys: convert bracket notation (filters[active])
+          // into dot notation (filters.active) so `unflatten` handles both.
+          const rawQuery = req.query || {};
+          const normalizedQuery: Record<string, any> = {};
+          Object.keys(rawQuery).forEach((k) => {
+            // Replace bracket groups like `[key]` with `.key`
+            const nk = k.replace(/\[(\w+)\]/g, '.$1');
+            normalizedQuery[nk] = (rawQuery as any)[k];
+          });
+
           const all = {
             ...(req.body || {}),
-            ...unflatten(req.query || {})!,
+            ...unflatten(normalizedQuery)!,
             ...(req.params || {}),
           };
           const ctrlAction: Function =
@@ -380,11 +494,14 @@ export default function expressRouter(
     );
   });
 
-  // Setup a default GET route that lists all available routes
+  // Setup a default GET route that lists available services (tables) and endpoints
   router.get("/", (req, res) => {
     const availableRoutes = listRoutes(router);
     const success = getStatusCode(200);
-    success.data = availableRoutes;
+    success.data = {
+      endpoints: availableRoutes,
+      tables: Object.keys(servicesSummary),
+    };
     res.status(success.status!).json(success);
   });
 
