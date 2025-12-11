@@ -1,6 +1,8 @@
 import { pascalCase } from "change-case-all";
 import { Model, JSONSchema } from "objection";
 
+import { t } from "dbl-utils";
+
 /**
  * Retrieve an Objection model by its table name.
  *
@@ -11,7 +13,10 @@ import { Model, JSONSchema } from "objection";
  * @example
  * const User = getModelByTableName("users", allModels);
  */
-export function getModelByTableName(tableName: string, models: Record<string, typeof Model>) {
+export function getModelByTableName(
+  tableName: string,
+  models: Record<string, typeof Model>
+) {
   return Object.values(models).find(
     (ModelIn) => ModelIn.tableName === tableName
   );
@@ -51,19 +56,19 @@ export function jsonSchemaToColumns(
   for (const [key, prop] of Object.entries(schemaProperties)) {
     const column: ITableColumn = {
       name: key,
-      label: (prop as any).title || key,
+      label: t((prop as any).title || key, "columnNames"),
     };
 
     const comment = (prop as any).$comment as string | undefined;
     if (comment) {
-      const [t, f] = comment.split('.');
+      const [t, f] = comment.split(".");
       column.type = t || (prop.type as string | undefined);
       if (f) column.format = f;
-    } else if (typeof prop.type === 'string') {
+    } else if (typeof prop.type === "string") {
       column.type = prop.type;
     }
 
-    if (typeof (prop as any).format === 'string') {
+    if (typeof (prop as any).format === "string") {
       column.format = (prop as any).format;
     }
 
@@ -72,4 +77,5 @@ export function jsonSchemaToColumns(
     columns[key] = column;
   }
 
-  return columns;}
+  return columns;
+}
