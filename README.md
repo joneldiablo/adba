@@ -128,12 +128,15 @@ ADBA automatically creates these endpoints for **every table** in your database:
 GET    /api/table/                    # List with query parameters
 POST   /api/table/                    # List with request body (advanced filtering)
 
-# Create records
+# Create records (INSERT)
 PUT    /api/table/                    # Create single or multiple records
+                                      # Body: { "insert": {} } or { "insert": [{}] }
 
 # Update records  
-PATCH  /api/table/                    # Bulk update with conditions
+PATCH  /api/table/                    # Bulk update (upsert) with {update: {...}} 
+                                      # Requires 'id' field in each object
 PATCH  /api/table/:id                 # Update specific record by ID
+                                      # Body: { ...fields } (direct, no "update" key)
 
 # Delete records
 DELETE /api/table/                    # Bulk delete with conditions  
@@ -191,6 +194,123 @@ GET /api/orders/?filters.date.$gt=2023-01-01
 # Multiple filters
 GET /api/users/?filters.active=true&filters.role=admin
 GET /api/users/?filters[active]=true&filters[role]=admin
+```
+
+#### **Ordering**
+```bash
+# Single column
+GET /api/users/?orderBy=name                 # Order by name (ascending)
+GET /api/products/?orderBy=price:desc        # Order by price (descending)
+
+# Multiple columns
+GET /api/users/?orderBy=role:asc,name:desc   # Order by role then name
+```
+
+#### **Creating Records (INSERT)**
+
+```bash
+# Create single record
+PUT /api/users/
+Content-Type: application/json
+
+{
+  "insert": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "age": 30
+  }
+}
+
+# Create multiple records
+PUT /api/users/
+Content-Type: application/json
+
+{
+  "insert": [
+    {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "age": 30
+    },
+    {
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "age": 28
+    }
+  ]
+}
+
+# Response (returns the inserted record(s))
+{
+  "success": true,
+  "error": false,
+  "data": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "age": 30
+  }
+}
+```
+
+#### **Updating Records (UPSERT)**
+
+**Important**: Update operations require the `id` field in each object to identify which records to update.
+
+```bash
+# Update multiple records (upsert from root)
+PATCH /api/users/
+Content-Type: application/json
+
+{
+  "update": {
+    "id": 1,
+    "name": "John Updated",
+    "email": "john.updated@example.com",
+    "age": 31
+  }
+}
+
+# Update multiple records at once
+PATCH /api/users/
+Content-Type: application/json
+
+{
+  "update": [
+    {
+      "id": 1,
+      "name": "John Updated",
+      "age": 31
+    },
+    {
+      "id": 2,
+      "name": "Jane Updated",
+      "age": 29
+    }
+  ]
+}
+
+# Update single record by ID (direct fields, no "update" key)
+PATCH /api/users/:id
+Content-Type: application/json
+
+{
+  "name": "John Updated",
+  "email": "john.updated@example.com",
+  "age": 31
+}
+
+# Response (returns the updated record(s))
+{
+  "success": true,
+  "error": false,
+  "data": {
+    "id": 1,
+    "name": "John Updated",
+    "email": "john.updated@example.com",
+    "age": 31
+  }
+}
 ```
 
 #### **Ordering**
@@ -496,6 +616,146 @@ const columns = jsonSchemaToColumns(
   }),
   'users'
 );
+```
+
+## 🎯 Practical API Request Examples
+
+### Creating Records with cURL
+
+```bash
+# Create single user
+curl -X PUT http://localhost:3000/api/users/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "insert": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "age": 30
+    }
+  }'
+
+# Create multiple users
+curl -X PUT http://localhost:3000/api/users/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "insert": [
+      {"name": "John", "email": "john@example.com"},
+      {"name": "Jane", "email": "jane@example.com"}
+    ]
+  }'
+```
+
+### Updating Records with cURL
+
+```bash
+# Update multiple records (requires id field)
+curl -X PATCH http://localhost:3000/api/users/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "update": {
+      "id": 1,
+      "name": "John Updated",
+      "email": "john.updated@example.com"
+    }
+  }'
+
+# Update multiple records at once
+curl -X PATCH http://localhost:3000/api/users/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "update": [
+      {"id": 1, "name": "John Updated"},
+      {"id": 2, "name": "Jane Updated"}
+    ]
+  }'
+
+# Update single record by ID (direct fields, no "update" wrapper)
+curl -X PATCH http://localhost:3000/api/users/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Updated",
+    "email": "john.updated@example.com"
+  }'
+```
+
+### Creating Records with JavaScript/Fetch
+
+```javascript
+// Create single record
+const createUser = async (userData) => {
+  const response = await fetch('http://localhost:3000/api/users/', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ insert: userData })
+  });
+  return response.json();
+};
+
+// Example
+await createUser({
+  name: "John Doe",
+  email: "john@example.com",
+  age: 30
+});
+
+// Create multiple records
+const createMultiple = async (usersData) => {
+  const response = await fetch('http://localhost:3000/api/users/', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ insert: usersData })
+  });
+  return response.json();
+};
+
+// Example
+await createMultiple([
+  { name: "John", email: "john@example.com" },
+  { name: "Jane", email: "jane@example.com" }
+]);
+```
+
+### Updating Records with JavaScript/Fetch
+
+```javascript
+// Update multiple records (must include id field)
+const updateRecords = async (userData) => {
+  const response = await fetch('http://localhost:3000/api/users/', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ update: userData })
+  });
+  return response.json();
+};
+
+// Example - update single record
+await updateRecords({
+  id: 1,
+  name: "John Updated",
+  email: "john.updated@example.com"
+});
+
+// Example - update multiple records
+await updateRecords([
+  { id: 1, name: "John Updated" },
+  { id: 2, name: "Jane Updated" }
+]);
+
+// Update single record by ID (direct fields)
+const updateById = async (userId, userData) => {
+  const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData)
+  });
+  return response.json();
+};
+
+// Example
+await updateById(1, {
+  name: "John Updated",
+  email: "john.updated@example.com"
+});
 ```
 
 ## 🎯 Advanced Usage Examples
