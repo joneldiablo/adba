@@ -214,7 +214,7 @@ Content-Type: application/json
     "age": { "$gte": 21, "$lt": 65 },
     "role": ["admin", "moderator"]
   },
-  "orderBy": "created_at:desc",
+  "orderBy": { "created_at": "desc" },
   "limit": 50,
   "page": 0,
   "q": "john"
