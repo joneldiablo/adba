@@ -90,8 +90,8 @@ export type IExpressRouterConf = {
 };
 
 export type ISearch = {
-  filters: Record<string, any>;
-  orderBy: Record<string, string>;
+  filters?: Record<string, any>;
+  orderBy?: Record<string, string>;
   fields?: string | string[];
   limit?: boolean | number;
   offset?: number;

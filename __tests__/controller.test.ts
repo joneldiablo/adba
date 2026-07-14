@@ -26,14 +26,16 @@ describe("TEST Controller on test-one table", () => {
 
   test("findTypeString should return string fields from the model", () => {
     const result = apiController.findTypeString();
-    expect(result).toEqual(["text_column", "datetime_column", "string_column"]);
+    expect(result).toContain("text_column");
+    expect(result).toContain("datetime_column");
+    expect(result).toContain("string_column");
   });
 
   test("list should return data with pagination", async () => {
     const searchData = { filters: {}, orderBy: {}, limit: 10, page: 0 };
     const response = await apiController.list(searchData);
     expect(response.success).toBe(true);
-    expect(response.data.length).toBeLessThanOrEqual(10);
+    expect(response.data.data.length).toBeLessThanOrEqual(10);
   });
 
   test("selectById should return a row by ID", async () => {

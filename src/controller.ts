@@ -102,29 +102,30 @@ export default class Controller {
 
     // Omni search
     if (typeof q === "string") {
-      const tableName = ModelInUse.tableName + ".";
       const query = q.replace(/(['\\])/g, "\\$1");
-      const columns = Array.isArray(this.qcolumns)
-        ? [...this.qcolumns]
-        : this.findTypeString(ModelInUse);
-      const locateOrder = `WHEN {{column}} = '${query}' THEN 0 WHEN {{column}} LIKE '${query}%' THEN 1 WHEN {{column}} LIKE '%${query}' THEN 4`;
-      const regexColumn = /\{\{column\}\}/g;
-      const order: string[] = [];
-      const orWhereClauses: [string, string, string][] = [];
+       const columns = Array.isArray(this.qcolumns)
+         ? [...this.qcolumns]
+         : this.findTypeString(ModelInUse);
+       const locateOrder = `WHEN {{column}} = '${query}' THEN 0 WHEN {{column}} LIKE '${query}%' THEN 1 WHEN {{column}} LIKE '%${query}' THEN 4`;
+       const regexColumn = /\{\{column\}\}/g;
+       const order: string[] = [];
+       const orWhereClauses: [string, string, string][] = [];
 
-      columns.map((column) => {
-        const orderClause: [string, string, string] = [
-          column.includes(".") ? column : tableName + column,
-          "like",
-          `%${query}%`,
-        ];
-        orWhereClauses.push(orderClause);
-        const orderString = locateOrder.replace(
-          regexColumn,
-          column.includes(".") ? column : tableName + column
-        );
-        order.push(orderString);
-      });
+       columns.map((column) => {
+         const qualifiedCol = this.Model.knex().ref(column);
+
+         const orderClause: [any, string, string] = [
+           qualifiedCol,
+           "like",
+           `%${query}%`,
+         ];
+         orWhereClauses.push(orderClause);
+         const orderString = locateOrder.replace(
+           regexColumn,
+           this.Model.knex().ref(column).toString()
+         );
+         order.push(orderString);
+       });
 
       queryBuilderIn.where((builder: QueryBuilderType<any>) => {
         orWhereClauses.forEach((w) => builder.orWhere(...w));
@@ -141,10 +142,8 @@ export default class Controller {
     if (typeof filters === "object") {
       queryBuilderIn.where((builder: QueryBuilderType<any>) => {
         Object.keys(filters).forEach((col) => {
-          const tableColumn = col.includes(".")
-            ? col
-            : ModelInUse.tableName + "." + col;
-          const search = filters[col];
+           const qualifiedCol = col;
+           const search = filters[col];
 
           // Support operator objects, e.g. { age: { $gte: 18, $lt: 65 } }
           if (search && typeof search === "object" && !Array.isArray(search)) {
@@ -166,53 +165,53 @@ export default class Controller {
                 isNumeric && !Array.isArray(val) ? Number(val) : val;
               switch (op) {
                 case "$gte":
-                  builder.where(tableColumn, ">=", value);
+                  builder.where(qualifiedCol, ">=", value);
                   break;
                 case "$gt":
-                  builder.where(tableColumn, ">", value);
+                  builder.where(qualifiedCol, ">", value);
                   break;
                 case "$lte":
-                  builder.where(tableColumn, "<=", value);
+                  builder.where(qualifiedCol, "<=", value);
                   break;
                 case "$lt":
-                  builder.where(tableColumn, "<", value);
+                  builder.where(qualifiedCol, "<", value);
                   break;
                 case "$ne":
-                  builder.where(tableColumn, "<>", value);
+                  builder.where(qualifiedCol, "<>", value);
                   break;
                 case "$in":
                   builder.whereIn(
-                    tableColumn,
+                    qualifiedCol,
                     Array.isArray(value) ? value : [value]
                   );
                   break;
                 case "$nin":
                   builder.whereNotIn(
-                    tableColumn,
+                    qualifiedCol,
                     Array.isArray(value) ? value : [value]
                   );
                   break;
                 case "$between":
                   if (Array.isArray(value) && value.length === 2)
-                    builder.whereBetween(tableColumn, value);
+                    builder.whereBetween(qualifiedCol, value);
                   break;
                 case "$nbetween":
                   if (Array.isArray(value) && value.length === 2)
-                    builder.whereNotBetween(tableColumn, value);
+                    builder.whereNotBetween(qualifiedCol, value);
                   break;
                 case "$like":
-                  builder.where(tableColumn, "like", String(value));
+                  builder.where(qualifiedCol, "like", String(value));
                   break;
                 case "$ilike":
                   // Use case-insensitive match where supported (Postgres); fallback to lower comparison
                   builder.whereRaw("LOWER(??) LIKE LOWER(?)", [
-                    tableColumn,
+                    qualifiedCol,
                     String(value),
                   ]);
                   break;
                 default:
                   // Unknown operator: fallback to equality
-                  builder.where(tableColumn, value as any);
+                  builder.where(qualifiedCol, value as any);
               }
             });
             return;
@@ -228,7 +227,7 @@ export default class Controller {
               prop.type === "string" || search.length > 2
                 ? "whereIn"
                 : "whereBetween";
-            builder[where](tableColumn, search as any);
+            builder[where](qualifiedCol, search as any);
           } else if (
             ModelInUse.jsonSchema &&
             (ModelInUse.jsonSchema.properties as any)[col]
@@ -236,16 +235,16 @@ export default class Controller {
             const propType = (ModelInUse.jsonSchema.properties as any)[col]
               .type;
             if (propType === "string") {
-              builder.where(tableColumn, "like", "%" + search + "%");
+              builder.where(qualifiedCol, "like", "%" + search + "%");
             } else if (
               ["number", "integer", "float", "decimal"].includes(propType)
             ) {
-              builder.where(tableColumn, Number(search));
+              builder.where(qualifiedCol, Number(search));
             } else {
-              builder.where(tableColumn, search as any);
+              builder.where(qualifiedCol, search as any);
             }
           } else {
-            builder.where(tableColumn, "like", "%" + search + "%");
+            builder.where(qualifiedCol, "like", "%" + search + "%");
           }
         });
       });
@@ -257,7 +256,7 @@ export default class Controller {
     if (!!limit!) {
       response = queryBuilderIn.page(page!, limit).then((r: any) => ({
         total: r.total,
-        data: r.results,
+        data: r.results || r.data,
         limit,
         offset,
         page,
@@ -266,15 +265,15 @@ export default class Controller {
       response = queryBuilderIn.then((data: object[]) => ({
         total: data.length,
         data,
-        limit,
+        limit: undefined,
         offset: offset || 0,
-        page,
+        page: page || undefined,
       }));
     }
 
-    return response
-      .then((resp: object[]) => this.successMerge(resp))
-      .catch((error: Error) => this.error(error));
+     return response
+       .then((resp: object[]) => this.success(resp))
+       .catch((error: Error) => this.error(error));
   }
 
   /**
@@ -312,13 +311,12 @@ export default class Controller {
         const d = String(rawDir || "").toLowerCase();
         const dir: "asc" | "desc" = d === "desc" ? "desc" : "asc";
 
-        // --- qualify column
-        const qualified = col.includes(".")
-          ? col
-          : `${this.Model.tableName}.${col}`;
+          // --- qualify column
+          const colQualified = col.includes('.') ? col : `${this.Model.tableName}.${col}`;
+          const qualifiedRef = this.Model.knex().ref(colQualified);
 
-        // --- apply to query
-        queryBuilderIn.orderBy(qualified, dir);
+         // --- apply to query
+         queryBuilderIn.orderBy(qualifiedRef, dir);
       }
     } catch (error: any) {
       switch (error?.message) {
@@ -427,13 +425,14 @@ export default class Controller {
     let nameColumn = "name";
 
     if (!properties[nameColumn]) {
-      // If 'name' column doesn't exist, find the first string column
-      const stringColumns = this.findTypeString();
-      nameColumn = stringColumns[0] || "name"; // fallback to 'name' if no string columns
+      // If 'name' column doesn't exist, find the first string column that isn't a date/time
+      const stringColumns = this.findTypeString().filter(f => !f.toLowerCase().includes('date') && !f.toLowerCase().includes('time') && !f.toLowerCase().endsWith('_at'));
+      nameColumn = stringColumns[0] || "name"; // fallback to 'name' if no such string columns
     }
 
-    queryBuilderIn.findOne({ [nameColumn]: name });
-    if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
+     queryBuilderIn.findOne({ [nameColumn]: name });
+     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
+
     return queryBuilderIn
       .then((row: any) => {
         if (!row) return this.error({ [nameColumn]: name }, 404, 0);
@@ -475,15 +474,17 @@ export default class Controller {
     data: Record<string, any>,
     queryBuilder?: QueryBuilderType<any>
   ): Promise<IStatusCode> {
-    const update = data.id ? data : data.update;
-    if (!update)
+    const update = data.id ? data : (data.update || data);
+    if (!update || (Array.isArray(update) && update.length === 0) || (typeof update === 'object' && Object.keys(update).length === 0)) {
+      if (Array.isArray(update) && update.length === 0) return Promise.resolve(this.success({}));
       return Promise.resolve(this.error("No update data provided", 400, 0));
+    }
     const queryBuilderIn = queryBuilder
       ? queryBuilder.clone()
       : this.Model.query();
     queryBuilderIn.clear(true);
 
-    queryBuilderIn.upsertGraph(update, { allowRefs: true });
+     queryBuilderIn.upsertGraph(update, { allowRefs: true, insertMissing: true });
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
     return queryBuilderIn
       .then((resp: any) => this.success(resp))
@@ -607,9 +608,10 @@ export default class Controller {
         getStatusCode(500, 0),
         { data: errorObj.message }
       ) as IStatusCode;
-    } else {
-      toReturn = Object.assign(
-        { error: true, success: false },
+      } else {
+        console.error("Controller Error:", errorObj);
+        toReturn = Object.assign(
+          { error: true, success: false },
         getStatusCode(status, code),
         { data: errorObj }
       ) as IStatusCode;

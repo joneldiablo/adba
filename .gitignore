@@ -224,4 +224,5 @@ postman-*-collection.json
 
 Explicar
 
-docs
+docs# npm lock (project uses yarn)
+package-lock.json

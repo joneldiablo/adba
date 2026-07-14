@@ -20,6 +20,12 @@ async function setupDatabase() {
   // Create tables
   await knexInstance.schema.createTable('test-one', (table) => {
     table.increments('id').primary();
+    table.integer('active').defaultTo(1);
+    table.datetime('created_at').defaultTo(knexInstance.fn.now());
+    table.datetime('updated_at').defaultTo(knexInstance.fn.now());
+    table.integer('created_by');
+    table.integer('grouped_by');
+    table.integer('owner');
     table.integer('integer_column');
     table.text('text_column');
     table.specificType('real_column', 'REAL');
@@ -32,6 +38,12 @@ async function setupDatabase() {
 
   await knexInstance.schema.createTable('test_two', (table) => {
     table.increments('id').primary();
+    table.integer('active').defaultTo(1);
+    table.datetime('created_at').defaultTo(knexInstance.fn.now());
+    table.datetime('updated_at').defaultTo(knexInstance.fn.now());
+    table.integer('created_by');
+    table.integer('grouped_by');
+    table.integer('owner');
     table.integer('integer_column');
     table.text('text_column');
     table.specificType('real_column', 'REAL');
@@ -44,6 +56,12 @@ async function setupDatabase() {
 
   await knexInstance.schema.createTable('__testables', (table) => {
     table.increments('id').primary();
+    table.integer('active').defaultTo(1);
+    table.datetime('created_at').defaultTo(knexInstance.fn.now());
+    table.datetime('updated_at').defaultTo(knexInstance.fn.now());
+    table.integer('created_by');
+    table.integer('grouped_by');
+    table.integer('owner');
     table.integer('integer_column');
     table.text('text_column');
     table.specificType('real_column', 'REAL');

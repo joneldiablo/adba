@@ -146,12 +146,28 @@ export async function generateMSSQLModels(
         }
 
         /**
+         * Returns boolean columns (BIT columns that map to boolean).
+         */
+        static get booleanColumns(): string[] {
+          const { properties = {} } = this.jsonSchema as any;
+          return Object.entries(properties)
+            .filter(([, prop]: [string, any]) => prop.type === 'boolean')
+            .map(([name]) => name);
+        }
+
+        /**
          * Parses the database JSON.
          * @param json The JSON object from the database.
          * @returns The parsed JSON object.
          */
         $parseDatabaseJson(json: any) {
           json = super.$parseDatabaseJson(json);
+          const boolCols = (this.constructor as typeof DynamicModel).booleanColumns;
+          for (const col of boolCols) {
+            if (json[col] !== undefined && json[col] !== null) {
+              json[col] = json[col] === 1 || json[col] === true;
+            }
+          }
           return typeof parseFunc === 'function' ? parseFunc(structureName, json) : json;
         }
 
@@ -162,6 +178,12 @@ export async function generateMSSQLModels(
          */
         $formatDatabaseJson(json: any) {
           json = super.$formatDatabaseJson(json);
+          const boolCols = (this.constructor as typeof DynamicModel).booleanColumns;
+          for (const col of boolCols) {
+            if (json[col] !== undefined && json[col] !== null) {
+              json[col] = json[col] ? 1 : 0;
+            }
+          }
           return typeof formatFunc === 'function' ? formatFunc(structureName, json) : json;
         }
       };
