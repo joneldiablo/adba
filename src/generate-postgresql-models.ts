@@ -49,8 +49,8 @@ export async function generatePostgreSQLModels(
           ON rc.unique_constraint_name = ccu_pk.constraint_name
           AND rc.unique_constraint_schema = ccu_pk.constraint_schema
           JOIN information_schema.columns ctu
-          ON ctu.table_name = ccu_fk.table_name
-          AND ctu.column_name = ccu_fk.column_name
+          ON ctu.table_name = ccu.table_name
+          AND ctu.column_name = ccu.column_name
         WHERE
           ctu.table_schema = 'public'
           AND tc.table_name = ?

@@ -24,7 +24,7 @@ export async function generateMSSQLModels(
       SELECT TABLE_NAME as name, TABLE_TYPE as type
       FROM INFORMATION_SCHEMA.TABLES
       WHERE TABLE_TYPE IN ('BASE TABLE', 'VIEW')
-    `).then(res => res.recordset);
+    `).then(res => Array.isArray(res) ? res : (res.recordset || []));
 
     for (const { name: structureName, type } of structures) {
       const columns = await knexInstance.raw(`
@@ -36,14 +36,14 @@ export async function generateMSSQLModels(
           COLUMNPROPERTY(object_id(c.TABLE_SCHEMA + '.' + c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') AS is_identity
         FROM INFORMATION_SCHEMA.COLUMNS c
         WHERE c.TABLE_NAME = ?
-      `, [structureName]).then(res => res.recordset);
+      `, [structureName]).then(res => Array.isArray(res) ? res : (res.recordset || []));
 
       const foreignKeys = await knexInstance.raw(`
         SELECT
           fk.name AS fk_name,
-          tp.name AS table,
-          rcp.name AS to,
-          cp.name AS from
+          tp.name AS [table],
+          rcp.name AS [to],
+          cp.name AS [from]
         FROM sys.foreign_keys AS fk
         INNER JOIN sys.foreign_key_columns AS fkc ON fk.object_id = fkc.constraint_object_id
         INNER JOIN sys.tables AS tp ON fkc.parent_object_id = tp.object_id
@@ -51,7 +51,7 @@ export async function generateMSSQLModels(
         INNER JOIN sys.tables AS tr ON fkc.referenced_object_id = tr.object_id
         INNER JOIN sys.columns AS rcp ON fkc.referenced_object_id = rcp.object_id AND fkc.referenced_column_id = rcp.column_id
         WHERE tp.name = ?
-      `, [structureName]).then(res => res.recordset);
+      `, [structureName]).then(res => Array.isArray(res) ? res : (res.recordset || []));
 
       // Define a dynamic model class
       const DynamicModel = class extends Model {
@@ -146,12 +146,28 @@ export async function generateMSSQLModels(
         }
 
         /**
+         * Returns boolean columns (BIT columns that map to boolean).
+         */
+        static get booleanColumns(): string[] {
+          const { properties = {} } = this.jsonSchema as any;
+          return Object.entries(properties)
+            .filter(([, prop]: [string, any]) => prop.type === 'boolean')
+            .map(([name]) => name);
+        }
+
+        /**
          * Parses the database JSON.
          * @param json The JSON object from the database.
          * @returns The parsed JSON object.
          */
         $parseDatabaseJson(json: any) {
           json = super.$parseDatabaseJson(json);
+          const boolCols = (this.constructor as typeof DynamicModel).booleanColumns;
+          for (const col of boolCols) {
+            if (json[col] !== undefined && json[col] !== null) {
+              json[col] = json[col] === 1 || json[col] === true;
+            }
+          }
           return typeof parseFunc === 'function' ? parseFunc(structureName, json) : json;
         }
 
@@ -162,6 +178,12 @@ export async function generateMSSQLModels(
          */
         $formatDatabaseJson(json: any) {
           json = super.$formatDatabaseJson(json);
+          const boolCols = (this.constructor as typeof DynamicModel).booleanColumns;
+          for (const col of boolCols) {
+            if (json[col] !== undefined && json[col] !== null) {
+              json[col] = json[col] ? 1 : 0;
+            }
+          }
           return typeof formatFunc === 'function' ? formatFunc(structureName, json) : json;
         }
       };

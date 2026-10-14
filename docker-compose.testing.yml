@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # MariaDB (MySQL compatible) - puerto 3307 para no afectar el 3306
+  mariadb:
+    image: mariadb:10.11
+    container_name: adba-mariadb-test
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: adba_test
+      MYSQL_USER: adba_user
+      MYSQL_PASSWORD: ${DB_MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    restart: "no"
+
+  # PostgreSQL - puerto 5433 para no afectar el 5432
+  postgres:
+    image: postgres:16-alpine
+    container_name: adba-postgres-test
+    environment:
+      POSTGRES_USER: adba_user
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      POSTGRES_DB: adba_test
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adba_user -d adba_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: "no"
+
+  # MSSQL - puerto 1434 para no afectar el 1433
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: adba-mssql-test
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: ${DB_MSSQL_PASSWORD}
+      MSSQL_PID: Developer
+    ports:
+      - "1434:1433"
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "${DB_MSSQL_PASSWORD}" -Q "SELECT 1" -C || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - mssql_data:/var/opt/mssql
+    restart: "no"
+
+volumes:
+  mariadb_data:
+  postgres_data:
+  mssql_data:

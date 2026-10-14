@@ -25,6 +25,12 @@ describe('SQLite Database Tests', () => {
     const jsonschema = {
       type: 'object',
       properties: {
+        active: { type: 'integer', $comment: 'integer' },
+        created_at: { type: 'string', $comment: 'string.datetime' },
+        updated_at: { type: 'string', $comment: 'string.datetime' },
+        created_by: { type: 'integer', $comment: 'integer' },
+        grouped_by: { type: 'integer', $comment: 'integer' },
+        owner: { type: 'integer', $comment: 'integer' },
         id: { type: 'integer', $comment: 'integer' },
         integer_column: { type: 'integer', $comment: 'integer' },
         text_column: { type: 'string', $comment: 'string' },

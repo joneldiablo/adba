@@ -1,4 +1,5 @@
 __tests__
+*.bak
 bin
 coverage
 e2e

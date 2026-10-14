@@ -1,5 +1,7 @@
 export * as zod from "zod";
 
+export { requireEnv } from "./env-validator";
+
 export { default as Controller } from "./controller";
 export { default as expressRouter } from "./express-router";
 export { default as formatData } from "./format-data";

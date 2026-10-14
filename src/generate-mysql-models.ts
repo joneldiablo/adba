@@ -158,43 +158,65 @@ export async function generateMySQLModels(
           return relations;
         }
 
-        /**
-         * Columns information derived from the JSON schema.
-         */
-        static get columns(): Record<string, ITableColumn> {
-          const { properties = {}, required = [] } = this.jsonSchema as any;
-          const cols = jsonSchemaToColumns(properties, required as string[]);
-          if (typeof columnsFunc === "function") {
-            const r = columnsFunc(structureName, cols);
-            if (r) deepMerge(cols, r);
+      /**
+       * Columns information derived from the JSON schema.
+       */
+      static get columns(): Record<string, ITableColumn> {
+        const { properties = {}, required = [] } = this.jsonSchema as any;
+        const cols = jsonSchemaToColumns(properties, required as string[]);
+        if (typeof columnsFunc === "function") {
+          const r = columnsFunc(structureName, cols);
+          if (r) deepMerge(cols, r);
+        }
+        return cols;
+      }
+
+      /**
+       * Returns boolean columns (TINYINT columns that map to boolean).
+       */
+      static get booleanColumns(): string[] {
+        const { properties = {} } = this.jsonSchema as any;
+        return Object.entries(properties)
+          .filter(([, prop]: [string, any]) => prop.type === "boolean")
+          .map(([name]) => name);
+      }
+
+      /**
+       * Parses the database JSON.
+       * @param json - The JSON object from the database.
+       * @returns The parsed JSON object.
+       */
+      $parseDatabaseJson(json: any) {
+        json = super.$parseDatabaseJson(json);
+        const boolCols = (this.constructor as typeof DynamicModel).booleanColumns;
+        for (const col of boolCols) {
+          if (json[col] !== undefined && json[col] !== null) {
+            json[col] = json[col] === 1 || json[col] === true;
           }
-          return cols;
         }
+        return typeof parseFunc === "function"
+          ? parseFunc(structureName, json)
+          : json;
+      }
 
-        /**
-         * Parses the database JSON.
-         * @param json - The JSON object from the database.
-         * @returns The parsed JSON object.
-         */
-        $parseDatabaseJson(json: any) {
-          json = super.$parseDatabaseJson(json);
-          return typeof parseFunc === "function"
-            ? parseFunc(structureName, json)
-            : json;
+      /**
+       * Formats the JSON object for the database.
+       * @param json - The JSON object to be formatted.
+       * @returns The formatted JSON object.
+       */
+      $formatDatabaseJson(json: any) {
+        json = super.$formatDatabaseJson(json);
+        const boolCols = (this.constructor as typeof DynamicModel).booleanColumns;
+        for (const col of boolCols) {
+          if (json[col] !== undefined && json[col] !== null) {
+            json[col] = json[col] ? 1 : 0;
+          }
         }
-
-        /**
-         * Formats the JSON object for the database.
-         * @param json - The JSON object to be formatted.
-         * @returns The formatted JSON object.
-         */
-        $formatDatabaseJson(json: any) {
-          json = super.$formatDatabaseJson(json);
-          return typeof formatFunc === "function"
-            ? formatFunc(structureName, json)
-            : json;
-        }
-      };
+        return typeof formatFunc === "function"
+          ? formatFunc(structureName, json)
+          : json;
+      }
+    };
 
       const pascalCaseName = className(structureName);
       const suffix = type === "table" ? "Table" : "View";
@@ -228,7 +250,6 @@ export function mapMySqlTypeToJsonType(mysqlType: string): string {
     INTEGER: "integer",
     MEDIUMINT: "integer",
     SMALLINT: "integer",
-    TINYINT: "integer",
     DECIMAL: "number",
     DOUBLE: "number",
     FLOAT: "number",
@@ -242,6 +263,9 @@ export function mapMySqlTypeToJsonType(mysqlType: string): string {
     TIMESTAMP: "string",
     TIME: "string",
   };
+  if (baseType === "TINYINT") {
+    return "boolean";
+  }
   return typeMap[baseType] || "string";
 }
 
