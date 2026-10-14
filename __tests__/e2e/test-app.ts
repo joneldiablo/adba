@@ -112,15 +112,15 @@ export async function createTestApp(dbKey: string): Promise<TestApp> {
   });
 
   await knexInstance('users').insert([
-    { id: 1, name: 'John Doe', email: 'john@example.com', age: 30, active: true, balance: 100.50 },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com', age: 25, active: true, balance: 200.75 },
-    { id: 3, name: 'Bob Johnson', email: 'bob@example.com', age: 35, active: false, balance: 50.00 },
+    { name: 'John Doe', email: 'john@example.com', age: 30, active: true, balance: 100.50 },
+    { name: 'Jane Smith', email: 'jane@example.com', age: 25, active: true, balance: 200.75 },
+    { name: 'Bob Johnson', email: 'bob@example.com', age: 35, active: false, balance: 50.00 },
   ]);
 
   await knexInstance('products').insert([
-    { id: 1, name: 'Laptop', description: 'High-end laptop', price: 999.99, stock: 10, available: true },
-    { id: 2, name: 'Mouse', description: 'Wireless mouse', price: 29.99, stock: 50, available: true },
-    { id: 3, name: 'Keyboard', description: 'Mechanical keyboard', price: 89.99, stock: 0, available: false },
+    { name: 'Laptop', description: 'High-end laptop', price: 999.99, stock: 10, available: true },
+    { name: 'Mouse', description: 'Wireless mouse', price: 29.99, stock: 50, available: true },
+    { name: 'Keyboard', description: 'Mechanical keyboard', price: 89.99, stock: 0, available: false },
   ]);
 
   const models = await generateModels(knexInstance);

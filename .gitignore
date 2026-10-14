@@ -222,7 +222,8 @@ postman-*-collection.json
 !postman-collection.json
 !postman-environment.json
 
-Explicar
+# Local backups
+*.bak
 
-docs# npm lock (project uses yarn)
+# npm lock (project uses yarn)
 package-lock.json

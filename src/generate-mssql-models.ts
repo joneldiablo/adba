@@ -24,7 +24,7 @@ export async function generateMSSQLModels(
       SELECT TABLE_NAME as name, TABLE_TYPE as type
       FROM INFORMATION_SCHEMA.TABLES
       WHERE TABLE_TYPE IN ('BASE TABLE', 'VIEW')
-    `).then(res => res.recordset);
+    `).then(res => Array.isArray(res) ? res : (res.recordset || []));
 
     for (const { name: structureName, type } of structures) {
       const columns = await knexInstance.raw(`
@@ -36,14 +36,14 @@ export async function generateMSSQLModels(
           COLUMNPROPERTY(object_id(c.TABLE_SCHEMA + '.' + c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') AS is_identity
         FROM INFORMATION_SCHEMA.COLUMNS c
         WHERE c.TABLE_NAME = ?
-      `, [structureName]).then(res => res.recordset);
+      `, [structureName]).then(res => Array.isArray(res) ? res : (res.recordset || []));
 
       const foreignKeys = await knexInstance.raw(`
         SELECT
           fk.name AS fk_name,
-          tp.name AS table,
-          rcp.name AS to,
-          cp.name AS from
+          tp.name AS [table],
+          rcp.name AS [to],
+          cp.name AS [from]
         FROM sys.foreign_keys AS fk
         INNER JOIN sys.foreign_key_columns AS fkc ON fk.object_id = fkc.constraint_object_id
         INNER JOIN sys.tables AS tp ON fkc.parent_object_id = tp.object_id
@@ -51,7 +51,7 @@ export async function generateMSSQLModels(
         INNER JOIN sys.tables AS tr ON fkc.referenced_object_id = tr.object_id
         INNER JOIN sys.columns AS rcp ON fkc.referenced_object_id = rcp.object_id AND fkc.referenced_column_id = rcp.column_id
         WHERE tp.name = ?
-      `, [structureName]).then(res => res.recordset);
+      `, [structureName]).then(res => Array.isArray(res) ? res : (res.recordset || []));
 
       // Define a dynamic model class
       const DynamicModel = class extends Model {

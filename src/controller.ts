@@ -105,7 +105,7 @@ export default class Controller {
       const query = q.replace(/(['\\])/g, "\\$1");
        const columns = Array.isArray(this.qcolumns)
          ? [...this.qcolumns]
-         : this.findTypeString(ModelInUse);
+         : this.findTypeString(ModelInUse).filter(col => { return !col.toLowerCase().match(/^(created|updated|deleted)_at|date|time/); });
        const locateOrder = `WHEN {{column}} = '${query}' THEN 0 WHEN {{column}} LIKE '${query}%' THEN 1 WHEN {{column}} LIKE '%${query}' THEN 4`;
        const regexColumn = /\{\{column\}\}/g;
        const order: string[] = [];
