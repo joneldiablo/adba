@@ -243,6 +243,13 @@ describe("TEST Controller Comprehensive - test-one table", () => {
       const response = await apiController.list(searchData);
       expect(response.success).toBe(true);
     });
+
+    test("should ignore a non-object orderBy (e.g. 'column:dir')", async () => {
+      const searchData = { filters: {}, orderBy: "integer_column:desc" as any, limit: 10, page: 0 };
+      const response = await apiController.list(searchData);
+      expect(response.success).toBe(true);
+      expect(Array.isArray(response.data.data)).toBe(true);
+    });
   });
 
   describe("applyOrderByLite", () => {

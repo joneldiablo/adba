@@ -69,9 +69,20 @@ describe(`E2E Tests - ${DB_TYPE.toUpperCase()}`, () => {
       expect(status).toBe(200);
     });
 
-    test.skip('should order by field - SKIPPED: bug in orderBy parsing', async () => {
-      const { status, data } = await apiCall('GET', '/users/?orderBy=age');
+    test('should order by field (dot notation)', async () => {
+      const { status, data } = await apiCall('GET', '/users/?orderBy.age=asc');
       expect(status).toBe(200);
+      expect(data.success).toBe(true);
+      const ages = data.data.data.map((u: any) => u.age);
+      expect(ages).toEqual([...ages].sort((a, b) => a - b));
+    });
+
+    test('should order by field (bracket notation)', async () => {
+      const { status, data } = await apiCall('GET', '/users/?orderBy[age]=desc');
+      expect(status).toBe(200);
+      expect(data.success).toBe(true);
+      const ages = data.data.data.map((u: any) => u.age);
+      expect(ages).toEqual([...ages].sort((a, b) => b - a));
     });
   });
 

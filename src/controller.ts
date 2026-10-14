@@ -67,13 +67,25 @@ export default class Controller {
     const ModelInUse = queryBuilder?._modelClass || this.Model;
     const {
       filters,
-      orderBy = {},
+      orderBy: rawOrderBy = {},
       fields: rawFields,
       limit: rawLimit,
       offset: rawOffset,
       page: rawPage,
       q,
     } = dataSearch;
+    // `orderBy` must be an object mapping column → direction (e.g.
+    // `{ created_at: 'desc' }`). Values like `"name"` or `"name:desc"` are not
+    // supported and would be iterated char-by-char, so they are ignored.
+    const orderBy: Record<string, any> =
+      rawOrderBy && typeof rawOrderBy === "object" && !Array.isArray(rawOrderBy)
+        ? rawOrderBy
+        : {};
+    if (rawOrderBy && orderBy !== rawOrderBy) {
+      console.warn(
+        "[adba] Ignoring invalid orderBy: expected an object like { column: 'asc' | 'desc' }."
+      );
+    }
     let limit: number;
     let offset: number;
     let page: number;
@@ -466,6 +478,10 @@ export default class Controller {
     data: Record<string, any>,
     queryBuilder?: QueryBuilderType<any>
   ): Promise<IStatusCode> {
+    if (!queryBuilder) {
+      const identityInsert = this.insertWithIdentity(data.insert);
+      if (identityInsert) return identityInsert;
+    }
     const queryBuilderIn = queryBuilder
       ? queryBuilder.clone()
       : this.Model.query();
@@ -474,6 +490,56 @@ export default class Controller {
     if (queryBuilder) queryBuilderIn.copyFrom(queryBuilder, true);
     return queryBuilderIn
       .then((resp: any) => this.success(resp))
+      .catch((error: Error) => this.error(error));
+  }
+
+  /**
+   * MSSQL treats the primary key as an `IDENTITY` column and rejects explicit
+   * values unless `IDENTITY_INSERT` is enabled. This runs flat inserts that
+   * carry an explicit primary key as a single raw batch (the `SET` and the
+   * `INSERT` must share the same round-trip on MSSQL), and returns `null` for
+   * any other engine/shape so callers fall back to the normal `insertGraph`.
+   *
+   * @param payload - The record or records to insert.
+   * @returns The result, or `null` when the special handling does not apply.
+   */
+  protected insertWithIdentity(payload: any): Promise<IStatusCode> | null {
+    const knex = this.Model.knex() as any;
+    const dialect = knex?.client?.dialect || knex?.client?.config?.client;
+    if (dialect !== "mssql") return null;
+
+    const idColumn = (this.Model as any).idColumn || "id";
+    const idColumns = Array.isArray(idColumn) ? idColumn : [idColumn];
+    const rows = Array.isArray(payload) ? payload : [payload];
+    if (!rows.length) return null;
+
+    const isPlainRow = (row: any) =>
+      row && typeof row === "object" && !Array.isArray(row);
+    const isFlat = (row: any) =>
+      Object.values(row).every(
+        (value) =>
+          !(
+            value &&
+            typeof value === "object" &&
+            !(value instanceof Date) &&
+            !Buffer.isBuffer(value)
+          )
+      );
+    const hasExplicitId = (row: any) =>
+      idColumns.every((col: string) => row[col] !== undefined && row[col] !== null);
+
+    if (!rows.every((row) => isPlainRow(row) && isFlat(row) && hasExplicitId(row))) {
+      return null;
+    }
+
+    const table = this.Model.tableName;
+    const { sql, bindings } = knex(table).insert(payload).toSQL();
+    return knex
+      .raw(
+        `SET IDENTITY_INSERT [${table}] ON; ${sql}; SET IDENTITY_INSERT [${table}] OFF;`,
+        bindings
+      )
+      .then(() => this.success(payload))
       .catch((error: Error) => this.error(error));
   }
 
