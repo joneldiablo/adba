@@ -18,7 +18,11 @@ const config: JestConfigWithTsJest = {
      '/e2e/', 
      '/utils/db-mysql', 
      '/utils/db-postgres', 
-     '/utils/db-mssql'
+     '/utils/db-mssql',
+     // Integration tests: require an external DB (see jest.config.e2e.ts / scripts/run-e2e.sh)
+     '/__tests__/mysql-controller.test.ts',
+     '/__tests__/postgres-controller.test.ts',
+     '/__tests__/mssql-controller.test.ts'
    ],
 
   transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$|.*flat.*)'],

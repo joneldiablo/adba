@@ -60,6 +60,17 @@ start_database() {
         mssql)
             docker compose -f "$PROJECT_DIR/docker-compose.testing.yml" up -d mssql
             wait_for_health "MSSQL" "localhost" "1434"
+            echo "Ensuring 'adba_test' database exists..."
+            for attempt in $(seq 1 10); do
+                if docker exec adba-mssql-test /opt/mssql-tools18/bin/sqlcmd \
+                    -S localhost -U sa -P "$DB_MSSQL_PASSWORD" -C \
+                    -Q "IF DB_ID('adba_test') IS NULL CREATE DATABASE adba_test;" 2>/dev/null; then
+                    echo "MSSQL database ready!"
+                    break
+                fi
+                echo "Attempt $attempt/10 - MSSQL not ready yet..."
+                sleep 3
+            done
             ;;
     esac
 }

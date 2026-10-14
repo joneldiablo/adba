@@ -138,6 +138,20 @@ export default class Controller {
 
     this.applyOrderByLite(queryBuilderIn, orderBy);
 
+    // MSSQL requires an ORDER BY clause for OFFSET/FETCH pagination. When
+    // paginating without an explicit ordering, apply a deterministic default
+    // so the query is valid on every supported engine.
+    if (rawLimit !== false && !Object.keys(orderBy).length && typeof q !== "string") {
+      const idColumn = (this.Model as any).idColumn || "id";
+      const idColumns = Array.isArray(idColumn) ? idColumn : [idColumn];
+      idColumns.forEach((col: string) => {
+        const colQualified = col.includes(".")
+          ? col
+          : `${this.Model.tableName}.${col}`;
+        queryBuilderIn.orderBy(this.Model.knex().ref(colQualified), "asc");
+      });
+    }
+
     // Filtering by columns
     if (typeof filters === "object") {
       queryBuilderIn.where((builder: QueryBuilderType<any>) => {
@@ -602,14 +616,22 @@ export default class Controller {
   protected error(errorObj?: any, status = 500, code = 0): IStatusCode {
     let toReturn: IStatusCode;
     if (errorObj instanceof Error) {
-      console.error(errorObj);
+      try {
+        console.error(errorObj);
+      } catch (e) {
+        console.error(String(errorObj));
+      }
       toReturn = Object.assign(
         { error: true, success: false },
         getStatusCode(500, 0),
         { data: errorObj.message }
       ) as IStatusCode;
-      } else {
-        console.error("Controller Error:", errorObj);
+    } else {
+        try {
+          console.error("Controller Error:", errorObj);
+        } catch (e) {
+          console.error("Controller Error:", String(errorObj));
+        }
         toReturn = Object.assign(
           { error: true, success: false },
         getStatusCode(status, code),

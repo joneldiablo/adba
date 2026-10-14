@@ -417,6 +417,7 @@ describe("TEST Controller MSSQL - test-one table", () => {
     test("selectByName should return a row by name field", async () => {
       const newData = {
         id: 300,
+        name: "TestNameMSSQL",
         integer_column: 300,
         text_column: "TestNameMSSQL",
         real_column: 99.99,

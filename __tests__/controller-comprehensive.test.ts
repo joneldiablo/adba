@@ -162,14 +162,17 @@ describe("TEST Controller Comprehensive - test-one table", () => {
     });
 
     test("should filter with $nbetween operator", async () => {
-      const searchData = { filters: { integer_column: { $nbetween: [1, 3] } }, limit: 10, page: 0 };
+      const searchData = { filters: { integer_column: { $nbetween: [2, 3] } }, limit: 10, page: 0 };
       const response = await apiController.list(searchData);
       expect(response.success).toBe(true);
       expect(response.data.data.length).toBeGreaterThan(0);
+      response.data.data.forEach((row: any) => {
+        expect(row.integer_column).toBeLessThan(2);
+      });
     });
 
     test("should filter with $like operator", async () => {
-      const searchData = { filters: { text_column: { $like: "Test%" } }, limit: 10, page: 0 };
+      const searchData = { filters: { text_column: { $like: "Text%" } }, limit: 10, page: 0 };
       const response = await apiController.list(searchData);
       expect(response.success).toBe(true);
       expect(response.data.data.length).toBeGreaterThan(0);

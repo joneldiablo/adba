@@ -436,6 +436,7 @@ describe("TEST Controller PostgreSQL - test-one table", () => {
     test("selectByName should return a row by name field", async () => {
       const newData = {
         id: 300,
+        name: "TestNamePG",
         integer_column: 300,
         text_column: "TestNamePG",
         real_column: 99.99,

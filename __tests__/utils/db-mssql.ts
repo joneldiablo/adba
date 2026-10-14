@@ -19,11 +19,29 @@ const DEFAULT_CONFIG = {
   pool: { min: 2, max: 10 },
 };
 
+// MSSQL: las columnas `id` son IDENTITY. Para sembrar valores explícitos hay
+// que habilitar IDENTITY_INSERT, y el SET + INSERT deben correr en el MISMO
+// batch (si no, knex/tedious los ejecuta en sesiones distintas y el SET se pierde).
+async function seedWithIdentity(
+  knex: Knex,
+  table: string,
+  rows: Record<string, any>[]
+): Promise<void> {
+  const { sql, bindings } = knex(table).insert(rows).toSQL();
+  await knex.raw(
+    `SET IDENTITY_INSERT [${table}] ON; ${sql}; SET IDENTITY_INSERT [${table}] OFF;`,
+    bindings
+  );
+}
+
 export async function createMssqlDatabase(): Promise<Knex> {
   const knex = knexLib(DEFAULT_CONFIG);
 
-  const hasTable = await knex.schema.hasTable('test-one');
-  if (!hasTable) {
+  await knex.schema.dropTableIfExists('test-one');
+  await knex.schema.dropTableIfExists('test_two');
+  await knex.schema.dropTableIfExists('__testables');
+
+  {
     await knex.schema.createTable('test-one', (table) => {
       table.increments('id').primary();
       table.integer('active').defaultTo(1);
@@ -84,7 +102,7 @@ export async function createMssqlDatabase(): Promise<Knex> {
       table.binary('blob_column');
     });
 
-    await knex('test-one').insert([
+    await seedWithIdentity(knex, 'test-one', [
       {
         id: 1,
         active: 1,
@@ -123,7 +141,7 @@ export async function createMssqlDatabase(): Promise<Knex> {
       }
     ]);
 
-    await knex('test_two').insert([
+    await seedWithIdentity(knex, 'test_two', [
       {
         id: 1,
         active: 1,
@@ -138,7 +156,7 @@ export async function createMssqlDatabase(): Promise<Knex> {
       },
     ]);
 
-    await knex('__testables').insert([
+    await seedWithIdentity(knex, '__testables', [
       {
         id: 1,
         active: 1,

@@ -17,8 +17,11 @@ const DEFAULT_CONFIG = {
 export async function createPostgresDatabase(): Promise<Knex> {
   const knex = knexLib(DEFAULT_CONFIG);
 
-  const hasTable = await knex.schema.hasTable('test-one');
-  if (!hasTable) {
+  await knex.schema.dropTableIfExists('test-one');
+  await knex.schema.dropTableIfExists('test_two');
+  await knex.schema.dropTableIfExists('__testables');
+
+  {
     await knex.schema.createTable('test-one', (table) => {
       table.increments('id').primary();
       table.integer('active').defaultTo(1);
