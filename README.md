@@ -197,14 +197,26 @@ GET /api/users/?filters[active]=true&filters[role]=admin
 ```
 
 #### **Ordering**
+
+`orderBy` **must be an object** mapping column → direction. It is **not** parsed
+from a `column:direction` string, so `?orderBy=price:desc` does **not** work
+(the router only builds the object from dot/bracket notation, or from the JSON
+body on `POST /`).
+
 ```bash
-# Single column
-GET /api/users/?orderBy=name                 # Order by name (ascending)
-GET /api/products/?orderBy=price:desc        # Order by price (descending)
+# Single column (dot notation)
+GET /api/users/?orderBy.name=asc             # Order by name ascending
+
+# Single column (bracket notation — equivalent)
+GET /api/products/?orderBy[price]=desc       # Order by price descending
 
 # Multiple columns
-GET /api/users/?orderBy=role:asc,name:desc   # Order by role then name
+GET /api/users/?orderBy.role=asc&orderBy.name=desc
 ```
+
+Direction accepts `asc`/`desc` (anything else falls back to `asc`). Dotted
+column paths (e.g. `orderBy.profile.name=asc`) are used as-is, so the related
+table must be joined first.
 
 #### **Creating Records (INSERT)**
 
@@ -314,14 +326,26 @@ Content-Type: application/json
 ```
 
 #### **Ordering**
+
+`orderBy` **must be an object** mapping column → direction. It is **not** parsed
+from a `column:direction` string, so `?orderBy=price:desc` does **not** work
+(the router only builds the object from dot/bracket notation, or from the JSON
+body on `POST /`).
+
 ```bash
-# Single column
-GET /api/users/?orderBy=name                 # Order by name (ascending)
-GET /api/products/?orderBy=price:desc        # Order by price (descending)
+# Single column (dot notation)
+GET /api/users/?orderBy.name=asc             # Order by name ascending
+
+# Single column (bracket notation — equivalent)
+GET /api/products/?orderBy[price]=desc       # Order by price descending
 
 # Multiple columns
-GET /api/users/?orderBy=role:asc,name:desc   # Order by role then name
+GET /api/users/?orderBy.role=asc&orderBy.name=desc
 ```
+
+Direction accepts `asc`/`desc` (anything else falls back to `asc`). Dotted
+column paths (e.g. `orderBy.profile.name=asc`) are used as-is, so the related
+table must be joined first.
 
 #### **Complex Queries (POST)**
 ```bash
