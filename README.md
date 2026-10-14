@@ -66,8 +66,14 @@ All requests accept JSON body. Query params can use **dot notation** or **bracke
 
 ```
 GET  /api/table/?filters.age.$gte=25&limit=10
-POST /api/table/?orderBy=created_at:desc
+GET  /api/table/?orderBy.created_at=desc
+GET  /api/table/?orderBy[created_at]=asc
 ```
+
+> **Ordering:** `orderBy` must be an **object** mapping column → direction
+> (`asc`/`desc`). Build it with dot/bracket notation in the querystring or as a
+> JSON object in the body. The `column:direction` string form
+> (e.g. `?orderBy=created_at:desc`) does **not** work.
 
 ### GET - List Records
 
